@@ -1,8 +1,9 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Clock, CalendarIcon } from "lucide-react"
+import { Clock, Calendar, MapPin, RefreshCw, AlertCircle } from "lucide-react"
 
 // Prayer times interface
 interface PrayerTime {
@@ -19,6 +20,69 @@ interface HijriDate {
   year: number
   monthArabic: string
   dayOfWeek: string
+  monthNumber: number
+}
+
+// API response interfaces
+interface AladhanTimings {
+  Fajr: string
+  Sunrise: string
+  Dhuhr: string
+  Asr: string
+  Sunset: string
+  Maghrib: string
+  Isha: string
+  Imsak: string
+  Midnight: string
+  Firstthird: string
+  Lastthird: string
+}
+
+interface AladhanDate {
+  readable: string
+  timestamp: string
+  hijri: {
+    date: string
+    format: string
+    day: string
+    weekday: { en: string; arabic: string }
+    month: { number: number; en: string; ar: string }
+    year: string
+    designation: { abbreviated: string; expanded: string }
+    holidays: string[]
+  }
+  gregorian: {
+    date: string
+    format: string
+    day: string
+    weekday: { en: string }
+    month: { number: number; en: string }
+    year: string
+    designation: { abbreviated: string; expanded: string }
+  }
+}
+
+interface AladhanResponse {
+  code: number
+  status: string
+  data: {
+    timings: AladhanTimings
+    date: AladhanDate
+    meta: {
+      latitude: number
+      longitude: number
+      timezone: string
+      method: {
+        id: number
+        name: string
+        params: { [key: string]: number }
+      }
+      latitudeAdjustmentMethod: string
+      midnightMode: string
+      school: string
+      offset: { [key: string]: number }
+    }
+  }
 }
 
 export default function PrayerAndCalendarSection() {
@@ -26,97 +90,273 @@ export default function PrayerAndCalendarSection() {
   const [hijriDate, setHijriDate] = useState<HijriDate | null>(null)
   const [calendarDays, setCalendarDays] = useState<{ day: number; isCurrentDay: boolean }[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [city, setCity] = useState("Dhaka")
+  const [country, setCountry] = useState("Bangladesh")
+  const [showLocationSelector, setShowLocationSelector] = useState(false)
+  const [tempCity, setTempCity] = useState("Dhaka")
+  const [tempCountry, setTempCountry] = useState("Bangladesh")
 
-  useEffect(() => {
-    // Simulate fetching prayer times
-    const fetchPrayerTimes = () => {
-      // This would be replaced with an actual API call
-      const currentTime = new Date()
-      const hours = currentTime.getHours()
+  // Format time from 24h to 12h format
+  const formatTime = (time: string): string => {
+    if (!time) return "N/A"
 
-      const times: PrayerTime[] = [
+    const [hours, minutes] = time.split(":")
+    const hour = Number.parseInt(hours, 10)
+    const ampm = hour >= 12 ? "PM" : "AM"
+    const formattedHour = hour % 12 || 12
+    return `${formattedHour}:${minutes} ${ampm}`
+  }
+
+  // Check if a prayer time is upcoming
+  const isUpcomingPrayer = (prayerTime: string): boolean => {
+    if (!prayerTime) return false
+
+    try {
+      const now = new Date()
+      const currentHours = now.getHours()
+      const currentMinutes = now.getMinutes()
+
+      const [prayerHours, prayerMinutes] = prayerTime.split(":").map((num) => Number.parseInt(num, 10))
+
+      // If prayer is later today
+      if (prayerHours > currentHours || (prayerHours === currentHours && prayerMinutes > currentMinutes)) {
+        return true
+      }
+    } catch (err) {
+      console.error("Error checking upcoming prayer:", err)
+    }
+
+    return false
+  }
+
+  // Generate fallback prayer times
+  const generateFallbackPrayerTimes = (): PrayerTime[] => {
+    return [
+      {
+        name: "Fajr",
+        arabicName: "الفجر",
+        time: "05:30 AM",
+      },
+      {
+        name: "Dhuhr",
+        arabicName: "الظهر",
+        time: "12:30 PM",
+      },
+      {
+        name: "Asr",
+        arabicName: "العصر",
+        time: "03:45 PM",
+      },
+      {
+        name: "Maghrib",
+        arabicName: "المغرب",
+        time: "06:15 PM",
+      },
+      {
+        name: "Isha",
+        arabicName: "العشاء",
+        time: "07:45 PM",
+      },
+    ]
+  }
+
+  // Fetch prayer times from API
+  const fetchPrayerTimes = async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Get current date in DD-MM-YYYY format
+      const today = new Date()
+      const day = String(today.getDate()).padStart(2, "0")
+      const month = String(today.getMonth() + 1).padStart(2, "0")
+      const year = today.getFullYear()
+      const dateStr = `${day}-${month}-${year}`
+
+      // Fetch data from API
+      const response = await fetch(
+        `https://api.aladhan.com/v1/timingsByCity/${dateStr}?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}&method=2`,
+      )
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch prayer times: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log("API Response:", data) // Log the response for debugging
+
+      // Check if the response has the expected structure
+      if (!data || data.code !== 200 || data.status !== "OK" || !data.data) {
+        throw new Error(`API returned unexpected response: ${JSON.stringify(data)}`)
+      }
+
+      // Check if timings exist in the response
+      if (!data.data.timings) {
+        throw new Error("API response is missing prayer timings")
+      }
+
+      // Process prayer times
+      const timings = data.data.timings
+
+      // Check if hijri date exists in the response
+      if (!data.data.date || !data.data.date.hijri) {
+        throw new Error("API response is missing Hijri date information")
+      }
+
+      const hijriData = data.data.date.hijri
+
+      // Create prayer times array with null checks
+      const prayers: PrayerTime[] = [
         {
           name: "Fajr",
           arabicName: "الفجر",
-          time: "05:30 AM",
-          isUpcoming: hours < 5 || (hours === 5 && currentTime.getMinutes() < 30),
+          time: formatTime(timings.Fajr || ""),
+          isUpcoming: isUpcomingPrayer(timings.Fajr || ""),
         },
         {
           name: "Dhuhr",
           arabicName: "الظهر",
-          time: "12:30 PM",
-          isUpcoming: hours < 12 || (hours === 12 && currentTime.getMinutes() < 30 && hours >= 5),
+          time: formatTime(timings.Dhuhr || ""),
+          isUpcoming: isUpcomingPrayer(timings.Dhuhr || ""),
         },
         {
           name: "Asr",
           arabicName: "العصر",
-          time: "03:45 PM",
-          isUpcoming: hours < 15 || (hours === 15 && currentTime.getMinutes() < 45 && hours >= 12),
+          time: formatTime(timings.Asr || ""),
+          isUpcoming: isUpcomingPrayer(timings.Asr || ""),
         },
         {
           name: "Maghrib",
           arabicName: "المغرب",
-          time: "06:15 PM",
-          isUpcoming: hours < 18 || (hours === 18 && currentTime.getMinutes() < 15 && hours >= 15),
+          time: formatTime(timings.Maghrib || ""),
+          isUpcoming: isUpcomingPrayer(timings.Maghrib || ""),
         },
         {
           name: "Isha",
           arabicName: "العشاء",
-          time: "07:45 PM",
-          isUpcoming: hours < 19 || (hours === 19 && currentTime.getMinutes() < 45 && hours >= 18),
+          time: formatTime(timings.Isha || ""),
+          isUpcoming: isUpcomingPrayer(timings.Isha || ""),
         },
       ]
 
-      // Ensure only one prayer time is marked as upcoming
+      // Ensure only one prayer is marked as upcoming (the next one)
       let foundUpcoming = false
-      const updatedTimes = times.map((time) => {
-        if (time.isUpcoming && !foundUpcoming) {
+      const updatedPrayers = prayers.map((prayer) => {
+        if (prayer.isUpcoming && !foundUpcoming) {
           foundUpcoming = true
-          return time
+          return prayer
         }
-        return { ...time, isUpcoming: false }
+        return { ...prayer, isUpcoming: false }
       })
 
-      setPrayerTimes(updatedTimes)
+      setPrayerTimes(updatedPrayers)
+
+      // Process Hijri date with null checks
+      if (
+        hijriData &&
+        hijriData.day &&
+        hijriData.month &&
+        hijriData.month.en &&
+        hijriData.month.ar &&
+        hijriData.year &&
+        hijriData.weekday &&
+        hijriData.weekday.en &&
+        hijriData.month.number
+      ) {
+        const hijri: HijriDate = {
+          day: Number.parseInt(hijriData.day),
+          month: hijriData.month.en,
+          monthArabic: hijriData.month.ar,
+          year: Number.parseInt(hijriData.year),
+          dayOfWeek: hijriData.weekday.en,
+          monthNumber: hijriData.month.number,
+        }
+
+        setHijriDate(hijri)
+
+        // Generate calendar days
+        generateCalendarDays(Number.parseInt(hijriData.day), hijriData.month.number)
+      } else {
+        // Generate fallback Hijri date if API data is incomplete
+        generateFallbackHijriDate()
+      }
+
+      setLoading(false)
+    } catch (err) {
+      console.error("Error fetching prayer times:", err)
+      setError(err instanceof Error ? err.message : "Failed to fetch prayer times")
+
+      // Set fallback data if API fails
+      setPrayerTimes(generateFallbackPrayerTimes())
+      generateFallbackHijriDate()
+
+      setLoading(false)
+    }
+  }
+
+  // Generate fallback Hijri date
+  const generateFallbackHijriDate = () => {
+    const fallbackHijri: HijriDate = {
+      day: 15,
+      month: "Ramadan",
+      monthArabic: "رمضان",
+      year: 1445,
+      dayOfWeek: "Monday",
+      monthNumber: 9,
     }
 
-    // Simulate fetching Hijri date
-    const fetchHijriDate = () => {
-      // This would be replaced with an actual API call
-      setHijriDate({
-        day: 15,
-        month: "Ramadan",
-        monthArabic: "رمضان",
-        year: 1445,
-        dayOfWeek: "Monday",
+    setHijriDate(fallbackHijri)
+    generateCalendarDays(15, 9)
+  }
+
+  // Generate calendar days for the current Hijri month
+  const generateCalendarDays = (currentDay: number, monthNumber: number) => {
+    // Determine days in month (simplified - actual calculation is more complex)
+    const daysInMonth = monthNumber % 2 === 0 ? 29 : 30
+
+    // Determine first day of month (this is a simplification)
+    // In a real app, you would calculate this properly based on the Hijri calendar
+    const firstDayOfMonth = 4 // Assuming Thursday (4) is the first day
+
+    const days = []
+
+    // Add empty days for the first week
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      days.push({ day: 0, isCurrentDay: false })
+    }
+
+    // Add the actual days
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push({
+        day: i,
+        isCurrentDay: i === currentDay,
       })
-
-      // Generate calendar days for current month
-      const daysInMonth = 30 // Assuming 30 days in Ramadan
-      const days = Array.from({ length: daysInMonth }, (_, i) => ({
-        day: i + 1,
-        isCurrentDay: i + 1 === 15, // Current day is 15th
-      }))
-
-      setCalendarDays(days)
     }
 
+    setCalendarDays(days)
+  }
+
+  // Handle location form submission
+  const handleLocationSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setCity(tempCity)
+    setCountry(tempCountry)
+    setShowLocationSelector(false)
+  }
+
+  // Fetch prayer times on component mount and when location changes
+  useEffect(() => {
     fetchPrayerTimes()
-    fetchHijriDate()
-    setLoading(false)
+  }, [city, country])
 
-    // Set up interval to update prayer times
-    const interval = setInterval(fetchPrayerTimes, 60000) // Update every minute
-
-    return () => clearInterval(interval)
-  }, [])
-
-  if (loading) {
+  if (loading && !prayerTimes.length) {
     return (
-      <section className="py-12">
-        <div className="container">
+      <section className="py-12 bg-white dark:bg-gray-950 transition-colors">
+        <div className="container mx-auto">
           <div className="text-center">
-            <p>Loading prayer times and calendar...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 dark:border-green-500 mb-4"></div>
+            <p className="dark:text-gray-300">Loading prayer times...</p>
           </div>
         </div>
       </section>
@@ -124,84 +364,185 @@ export default function PrayerAndCalendarSection() {
   }
 
   return (
-    <section className="py-12">
-      <div className="container">
-        <h2 className="text-3xl font-bold text-center mb-8">Prayer Times & Hijri Calendar</h2>
+    <section className="py-8 bg-white dark:bg-gray-950 transition-colors">
+      <div className="container mx-auto px-4 max-w-7xl">
+        <h2 className="text-2xl font-bold text-center mb-8 text-green-800 dark:text-green-400 transition-colors">
+          Prayer Times & Hijri Calendar
+        </h2>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        {error && (
+          <div className="max-w-5xl mx-auto mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 rounded-md text-red-700 dark:text-red-400 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Error loading prayer times</p>
+              <p className="text-sm">{error}</p>
+              <button
+                onClick={fetchPrayerTimes}
+                className="mt-2 text-sm flex items-center gap-1 text-red-700 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+              >
+                <RefreshCw className="h-3 w-3" /> Try again
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
           {/* Prayer Times Card */}
-          <Card className="shadow-md">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                Prayer Times
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                {prayerTimes.map((prayer) => (
-                  <div key={prayer.name} className={`prayer-time-card ${prayer.isUpcoming ? "upcoming" : ""}`}>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="font-medium">{prayer.name}</h3>
-                        <p className="text-sm text-muted-foreground arabic-text">{prayer.arabicName}</p>
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-green-100 dark:border-green-900 overflow-hidden transition-colors">
+            <div className="flex items-center justify-between p-4 border-b border-green-100 dark:border-green-900 bg-green-50 dark:bg-green-950/50 transition-colors">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-green-600 dark:text-green-500" />
+                <h3 className="font-medium text-green-800 dark:text-green-400 transition-colors">Prayer Times</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowLocationSelector(!showLocationSelector)}
+                  className="text-xs flex items-center gap-1 text-green-700 dark:text-green-500 hover:text-green-800 dark:hover:text-green-400 transition-colors"
+                >
+                  <MapPin className="h-3 w-3" />
+                  {city}, {country}
+                </button>
+                <button
+                  onClick={fetchPrayerTimes}
+                  className="p-1 rounded-full hover:bg-green-100 dark:hover:bg-green-900/30 text-green-700 dark:text-green-500 transition-colors"
+                  aria-label="Refresh prayer times"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {showLocationSelector && (
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 border-b border-green-100 dark:border-green-900 transition-colors">
+                <form onSubmit={handleLocationSubmit} className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex-1">
+                    <label htmlFor="city" className="sr-only">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      id="city"
+                      placeholder="City"
+                      value={tempCity}
+                      onChange={(e) => setTempCity(e.target.value)}
+                      className="w-full p-2 text-sm border border-green-200 dark:border-green-800 rounded-md bg-white dark:bg-gray-800 text-green-900 dark:text-green-100 focus:outline-none focus:ring-1 focus:ring-green-500 transition-colors"
+                      required
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label htmlFor="country" className="sr-only">
+                      Country
+                    </label>
+                    <input
+                      type="text"
+                      id="country"
+                      placeholder="Country"
+                      value={tempCountry}
+                      onChange={(e) => setTempCountry(e.target.value)}
+                      className="w-full p-2 text-sm border border-green-200 dark:border-green-800 rounded-md bg-white dark:bg-gray-800 text-green-900 dark:text-green-100 focus:outline-none focus:ring-1 focus:ring-green-500 transition-colors"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-md transition-colors"
+                  >
+                    Update
+                  </button>
+                </form>
+              </div>
+            )}
+
+            <div className="p-4">
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 dark:border-green-500"></div>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {prayerTimes.map((prayer) => (
+                    <div
+                      key={prayer.name}
+                      className={`flex justify-between items-center py-3 ${
+                        prayer.isUpcoming ? "bg-green-50 dark:bg-green-900/20 rounded-md px-3" : ""
+                      } transition-colors`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium text-green-800 dark:text-green-400 transition-colors">
+                          {prayer.name}
+                        </span>
+                        <span className="text-sm text-green-600 dark:text-green-500 transition-colors">
+                          {prayer.arabicName}
+                        </span>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-semibold">{prayer.time}</p>
-                        {prayer.isUpcoming && <span className="text-xs text-primary font-medium">Upcoming</span>}
+                        <span className="text-green-800 dark:text-green-400 font-medium transition-colors">
+                          {prayer.time}
+                        </span>
+                        {prayer.isUpcoming && (
+                          <div className="text-xs text-green-600 dark:text-green-500 mt-1 transition-colors">
+                            Upcoming
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Hijri Calendar Card */}
-          <Card className="shadow-md">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5 text-primary" />
-                Hijri Calendar
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {hijriDate && (
-                <div className="mb-6">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-green-100 dark:border-green-900 overflow-hidden transition-colors">
+            <div className="flex items-center gap-2 p-4 border-b border-green-100 dark:border-green-900 bg-green-50 dark:bg-green-950/50 transition-colors">
+              <Calendar className="h-5 w-5 text-green-600 dark:text-green-500" />
+              <h3 className="font-medium text-green-800 dark:text-green-400 transition-colors">Hijri Calendar</h3>
+            </div>
+            <div className="p-4">
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 dark:border-green-500"></div>
+                </div>
+              ) : hijriDate ? (
+                <>
                   <div className="text-center mb-4">
-                    <h3 className="text-xl font-bold">
+                    <h4 className="text-lg font-medium text-green-800 dark:text-green-400 transition-colors">
                       {hijriDate.month} {hijriDate.year}
-                    </h3>
-                    <p className="text-lg arabic-text">
+                    </h4>
+                    <p className="text-green-600 dark:text-green-500 text-sm arabic-text transition-colors">
                       {hijriDate.monthArabic} {hijriDate.year}
                     </p>
-                    <p className="mt-2 text-muted-foreground">
+                    <p className="mt-2 text-sm text-green-700 dark:text-green-500 transition-colors">
                       Today: {hijriDate.dayOfWeek}, {hijriDate.day} {hijriDate.month} {hijriDate.year}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-7 gap-1 text-center">
+                  <div className="grid grid-cols-7 text-center text-sm">
                     {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-                      <div key={day} className="font-medium text-sm py-2">
+                      <div key={day} className="font-medium py-2 text-green-700 dark:text-green-500 transition-colors">
                         {day}
                       </div>
                     ))}
 
-                    {/* Add empty cells for days before the 1st of the month */}
-                    {Array.from({ length: 1 }).map((_, i) => (
-                      <div key={`empty-${i}`} className="calendar-day"></div>
-                    ))}
-
-                    {calendarDays.map((day) => (
-                      <div key={`day-${day.day}`} className={`calendar-day ${day.isCurrentDay ? "current" : ""}`}>
-                        {day.day}
+                    {calendarDays.map((day, index) => (
+                      <div
+                        key={index}
+                        className={`py-2 ${
+                          day.day === 0
+                            ? ""
+                            : day.isCurrentDay
+                              ? "bg-green-600 dark:bg-green-700 text-white rounded-full w-8 h-8 flex items-center justify-center mx-auto"
+                              : "text-green-800 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                        } transition-colors`}
+                      >
+                        {day.day !== 0 ? day.day : ""}
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
     </section>

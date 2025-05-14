@@ -1,55 +1,74 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { BookOpen, ArrowRight } from "lucide-react"
-import Link from "next/link"
-
-interface Hadith {
-  narrator: string
-  text: string
-  source: string
-  book: string
-  number: number
-}
-
-interface HadithSectionProps {
-  randomHadith: Hadith
-}
-
-export default function HadithSection({ randomHadith }: HadithSectionProps) {
+export default function HadithSection() {
   return (
-    <section className="py-12">
-      <div className="container">
-        <h2 className="text-3xl font-bold text-center mb-8">Hadith of the Day</h2>
+    <section className="py-8 bg-white dark:bg-gray-950 transition-colors">
+      <div className="container mx-auto px-4 max-w-7xl">
+        <h2 className="text-2xl font-bold text-center mb-8 text-green-800 dark:text-green-400 transition-colors">
+          Hadith of the Day
+        </h2>
 
-        <Card className="shadow-md max-w-3xl mx-auto">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              Hadith
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p className="italic text-lg">{randomHadith.text}</p>
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-green-100 dark:border-green-900 overflow-hidden transition-colors">
+            <div className="flex items-center gap-2 p-4 border-b border-green-100 dark:border-green-900 transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-green-600 dark:text-green-500 transition-colors"
+              >
+                <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                <path d="M17 21h-7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
+                <path d="M9 9h1" />
+                <path d="M9 13h6" />
+                <path d="M9 17h6" />
+              </svg>
+              <h3 className="font-medium text-green-800 dark:text-green-400 transition-colors">Hadith</h3>
+            </div>
+            <div className="p-6">
+              <p className="text-green-800 dark:text-green-300 leading-relaxed transition-colors">
+                The Messenger of Allah (ﷺ) said, "When a person dies, his deeds come to an end except for three: Sadaqah
+                Jariyah (ceaseless charity), knowledge which is beneficial, or a virtuous descendant who prays for him
+                (the deceased)."
+              </p>
 
-              <div className="pt-4 border-t">
-                <p className="font-medium">Narrator: {randomHadith.narrator}</p>
-                <p className="text-sm text-muted-foreground">
-                  Source: {randomHadith.source}, {randomHadith.book}, No. {randomHadith.number}
+              <div className="mt-4 pt-4 border-t border-green-100 dark:border-green-900 transition-colors">
+                <p className="text-sm text-green-700 dark:text-green-500 transition-colors">Narrator: Abu Hurairah</p>
+                <p className="text-xs text-green-600 dark:text-green-600 transition-colors">
+                  Source: Sahih Muslim, The Book of Wills, No. 1631
                 </p>
               </div>
 
-              <div className="pt-4 flex justify-end">
-                <Link href="/hadith">
-                  <Button variant="outline" className="gap-2">
-                    Explore More Hadith
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
+              <div className="mt-4 text-right">
+                <a
+                  href="/hadith"
+                  className="inline-flex items-center text-green-600 dark:text-green-500 hover:text-green-800 dark:hover:text-green-400 transition-colors"
+                >
+                  Explore More Hadith
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="ml-1"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
+                </a>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </section>
   )
