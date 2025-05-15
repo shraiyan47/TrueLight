@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { Clock, Calendar, MapPin, RefreshCw, AlertCircle } from "lucide-react"
 
 // Prayer times interface
@@ -96,6 +96,48 @@ export default function PrayerAndCalendarSection() {
   const [showLocationSelector, setShowLocationSelector] = useState(false)
   const [tempCity, setTempCity] = useState("Dhaka")
   const [tempCountry, setTempCountry] = useState("Bangladesh")
+
+  useEffect(() => {
+
+    // Ask permission to use geolocation and get the user's City and Country
+    // This is a simplified example. In a real app, you would handle errors and permissions properly.
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude
+          const lon = position.coords.longitude
+
+          // Fetch city and country based on latitude and longitude
+          fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`)
+            .then((response) => response.json())
+            .then((data) => {
+              if (data && data.city && data.countryName) {
+                setCity(data.city)
+                setCountry(data.countryName)
+              }
+            })
+            .catch((error) => console.error("Error fetching location:", error))
+        },
+        (error) => console.error("Geolocation error:", error),
+      )
+    }
+
+    // Fallback to default city and country if geolocation is not supported or fails
+    else {
+      console.warn("Geolocation is not supported by this browser.")
+    }
+
+    // Set default city and country if not already set
+    if (!city || !country) {
+      setCity("Dhaka")
+      setCountry("Bangladesh")
+    }
+
+    // Fetch prayer times when the component mounts
+    fetchPrayerTimes()
+    
+
+  }, []);
 
   // Format time from 24h to 12h format
   const formatTime = (time: string): string => {

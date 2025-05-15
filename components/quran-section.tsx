@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Book, Headphones, AlertCircle, ChevronDown, ChevronUp } from "lucide-react"
+import { Search, Book, Headphones, AlertCircle, ChevronDown, ChevronUp, ChevronRight } from "lucide-react"
 import QuranAudioPlayer from "./quran-audio-player"
 
 // Interfaces for Quran API
@@ -32,6 +32,7 @@ export default function QuranSection() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null)
   const [ayahs, setAyahs] = useState<Ayah[]>([])
+  const [displayedAyahs, setDisplayedAyahs] = useState<Ayah[]>([])
   const [surahs, setSurahs] = useState<Surah[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -50,6 +51,8 @@ export default function QuranSection() {
   const [playingAyah, setPlayingAyah] = useState<number | null>(null)
   const [audioError, setAudioError] = useState(false)
   const [audioErrorCount, setAudioErrorCount] = useState(0)
+  const [showAllAyahs, setShowAllAyahs] = useState(false)
+  const AYAHS_PER_PAGE = 10
 
   // List of reciters
   const reciters: Reciter[] = [
@@ -76,6 +79,23 @@ export default function QuranSection() {
     const currentIndex = reciters.findIndex((r) => r.id === selectedReciter.id)
     const nextIndex = (currentIndex + 1) % reciters.length
     setSelectedReciter(reciters[nextIndex])
+  }
+
+  // Update displayed ayahs when full ayahs list changes
+  useEffect(() => {
+    if (ayahs.length > 0) {
+      setDisplayedAyahs(ayahs.slice(0, AYAHS_PER_PAGE))
+    }
+  }, [ayahs])
+
+  // Toggle between showing limited ayahs and all ayahs
+  const toggleAyahsDisplay = () => {
+    if (showAllAyahs) {
+      setDisplayedAyahs(ayahs.slice(0, AYAHS_PER_PAGE))
+    } else {
+      setDisplayedAyahs(ayahs)
+    }
+    setShowAllAyahs(!showAllAyahs)
   }
 
   // Fetch list of surahs
@@ -167,6 +187,7 @@ export default function QuranSection() {
   const fetchAyahs = async (surahNumber: number) => {
     setLoading(true)
     setError(null)
+    setShowAllAyahs(false)
 
     try {
       // Fetch Arabic ayahs
@@ -198,6 +219,8 @@ export default function QuranSection() {
       }))
 
       setAyahs(combinedAyahs)
+      // Initially display only the first 10 ayahs
+      setDisplayedAyahs(combinedAyahs.slice(0, AYAHS_PER_PAGE))
     } catch (err) {
       console.error("Error fetching ayahs:", err)
       setError("Failed to load surah. Please try again later.")
@@ -226,7 +249,7 @@ export default function QuranSection() {
 
   return (
     <section className="py-8 bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="container mx-auto px-4 max-w-7xl">
+      <div className="container mx-auto px-4">
         <h2 className="text-2xl font-bold text-center mb-8 text-green-800 dark:text-green-400 transition-colors">
           The Holy Quran
         </h2>
@@ -452,48 +475,64 @@ export default function QuranSection() {
                   <p>{error}</p>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  {ayahs.map((ayah) => (
-                    <div
-                      key={ayah.number}
-                      className="border-b border-green-100 dark:border-green-900 pb-4 last:border-0"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="w-8 h-8 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center text-green-800 dark:text-green-400 text-sm transition-colors">
-                          {ayah.numberInSurah}
+                <>
+                  {/* Scrollable container for ayahs */}
+                  <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2">
+                    {displayedAyahs.map((ayah) => (
+                      <div
+                        key={ayah.number}
+                        className="border-b border-green-100 dark:border-green-900 pb-4 last:border-0"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="w-8 h-8 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center text-green-800 dark:text-green-400 text-sm transition-colors">
+                            {ayah.numberInSurah}
+                          </div>
+                          {!audioError && (
+                            <button
+                              onClick={() => setPlayingAyah(ayah.numberInSurah)}
+                              className="p-1 text-green-600 dark:text-green-500 hover:text-green-800 dark:hover:text-green-400 transition-colors"
+                              aria-label={`Listen to Ayah ${ayah.numberInSurah}`}
+                            >
+                              <Headphones className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
-                        {!audioError && (
-                          <button
-                            onClick={() => setPlayingAyah(ayah.numberInSurah)}
-                            className="p-1 text-green-600 dark:text-green-500 hover:text-green-800 dark:hover:text-green-400 transition-colors"
-                            aria-label={`Listen to Ayah ${ayah.numberInSurah}`}
-                          >
-                            <Headphones className="h-4 w-4" />
-                          </button>
+                        <p className="text-right text-lg arabic-text leading-loose text-green-900 dark:text-green-300 mb-2 transition-colors">
+                          {ayah.text}
+                        </p>
+                        <p className="text-green-800 dark:text-green-400 transition-colors">{ayah.translation}</p>
+
+                        {/* Individual ayah audio player - only show if audio is not in error state */}
+                        {!audioError && playingAyah === ayah.numberInSurah && (
+                          <div className="mt-3">
+                            <QuranAudioPlayer
+                              surahNumber={selectedSurah.number}
+                              ayahNumber={ayah.numberInSurah}
+                              reciter={selectedReciter.id}
+                              onComplete={handleAyahComplete}
+                              onError={tryAlternativeAudioSource}
+                              className="mt-2"
+                              key={`individual-ayah-${selectedReciter.id}-${selectedSurah.number}-${ayah.numberInSurah}`}
+                            />
+                          </div>
                         )}
                       </div>
-                      <p className="text-right text-lg arabic-text leading-loose text-green-900 dark:text-green-300 mb-2 transition-colors">
-                        {ayah.text}
-                      </p>
-                      <p className="text-green-800 dark:text-green-400 transition-colors">{ayah.translation}</p>
+                    ))}
+                  </div>
 
-                      {/* Individual ayah audio player - only show if audio is not in error state */}
-                      {!audioError && playingAyah === ayah.numberInSurah && (
-                        <div className="mt-3">
-                          <QuranAudioPlayer
-                            surahNumber={selectedSurah.number}
-                            ayahNumber={ayah.numberInSurah}
-                            reciter={selectedReciter.id}
-                            onComplete={handleAyahComplete}
-                            onError={tryAlternativeAudioSource}
-                            className="mt-2"
-                            key={`individual-ayah-${selectedReciter.id}-${selectedSurah.number}-${ayah.numberInSurah}`}
-                          />
-                        </div>
-                      )}
+                  {/* Show more/less button */}
+                  {ayahs.length > AYAHS_PER_PAGE && (
+                    <div className="mt-6 text-center">
+                      <button
+                        onClick={toggleAyahsDisplay}
+                        className="inline-flex items-center gap-1 px-4 py-2 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-800 dark:text-green-400 rounded-md transition-colors"
+                      >
+                        {showAllAyahs ? "Show Less" : `Show All ${ayahs.length} Verses`}
+                        <ChevronRight className={`h-4 w-4 transition-transform ${showAllAyahs ? "rotate-90" : ""}`} />
+                      </button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           </div>
