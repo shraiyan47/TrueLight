@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Search, Book, Headphones, AlertCircle, ChevronDown, ChevronUp, ChevronRight } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Search, Book, Headphones, AlertCircle, ChevronDown, ChevronUp, ChevronRight, Play } from "lucide-react"
 import QuranAudioPlayer from "./quran-audio-player"
 
 // Interfaces for Quran API
@@ -53,6 +53,11 @@ export default function QuranSection() {
   const [audioErrorCount, setAudioErrorCount] = useState(0)
   const [showAllAyahs, setShowAllAyahs] = useState(false)
   const AYAHS_PER_PAGE = 10
+  const [currentPlayingVerseIndex, setCurrentPlayingVerseIndex] = useState<number | null>(null)
+  const [isPlayingFullSurah, setIsPlayingFullSurah] = useState(false)
+
+  // Add a ref to track if we're in the process of changing verses
+  const changingVerseRef = useRef(false)
 
   // List of reciters
   const reciters: Reciter[] = [
@@ -64,7 +69,65 @@ export default function QuranSection() {
     { id: "ar.hudhaify", name: "Ali Al-Hudhaify" },
   ]
 
-  // Add this function to the component
+  // This effect handles the sequential playback logic
+  useEffect(() => {
+    if (isPlayingFullSurah && selectedSurah && currentPlayingVerseIndex !== null) {
+      // Set the currently playing ayah based on the verse index
+      setPlayingAyah(currentPlayingVerseIndex)
+    }
+  }, [isPlayingFullSurah, currentPlayingVerseIndex, selectedSurah])
+
+  // Handle when an ayah's audio playback completes
+  const handleAyahComplete = () => {
+    console.log("Ayah complete, isPlayingFullSurah:", isPlayingFullSurah, "currentIndex:", currentPlayingVerseIndex)
+
+    if (isPlayingFullSurah && currentPlayingVerseIndex !== null && selectedSurah) {
+      // Prevent race conditions by using the ref
+      if (changingVerseRef.current) return
+      changingVerseRef.current = true
+
+      // Calculate the next verse index
+      const nextIndex = currentPlayingVerseIndex + 1
+
+      // Check if we've reached the end of the surah
+      if (nextIndex > selectedSurah.numberOfAyahs) {
+        console.log("Reached end of surah")
+        setIsPlayingFullSurah(false)
+        setCurrentPlayingVerseIndex(null)
+        setPlayingAyah(null)
+        changingVerseRef.current = false
+        return
+      }
+
+      console.log("Moving to next verse:", nextIndex)
+
+      // Use setTimeout to ensure state updates have time to propagate
+      setTimeout(() => {
+        setCurrentPlayingVerseIndex(nextIndex)
+        changingVerseRef.current = false
+      }, 500)
+    } else {
+      // If not playing full surah, just stop the current ayah
+      setPlayingAyah(null)
+    }
+  }
+
+  // Start playing the full surah
+  const startPlayingFullSurah = () => {
+    if (selectedSurah) {
+      console.log("Starting full surah playback")
+      // Reset any currently playing ayah
+      setPlayingAyah(null)
+
+      // Set up for sequential playback with a slight delay
+      setTimeout(() => {
+        setIsPlayingFullSurah(true)
+        setCurrentPlayingVerseIndex(1)
+      }, 100)
+    }
+  }
+
+  // Handle audio errors
   const tryAlternativeAudioSource = () => {
     console.log("Trying alternative audio source")
     setAudioErrorCount((prev) => prev + 1)
@@ -189,6 +252,11 @@ export default function QuranSection() {
     setError(null)
     setShowAllAyahs(false)
 
+    // Stop any current playback when changing surahs
+    setIsPlayingFullSurah(false)
+    setCurrentPlayingVerseIndex(null)
+    setPlayingAyah(null)
+
     try {
       // Fetch Arabic ayahs
       const arabicResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`)
@@ -233,11 +301,6 @@ export default function QuranSection() {
   const handleSurahSelect = (surah: Surah) => {
     setSelectedSurah(surah)
     fetchAyahs(surah.number)
-  }
-
-  // Handle ayah audio completion
-  const handleAyahComplete = () => {
-    setPlayingAyah(null)
   }
 
   // Filter surahs based on search query
@@ -328,7 +391,7 @@ export default function QuranSection() {
                         surahNumber={ayahOfTheDay.surahNumber}
                         ayahNumber={ayahOfTheDay.ayahNumber}
                         reciter={selectedReciter.id}
-                        onComplete={handleAyahComplete}
+                        onComplete={() => setPlayingAyah(null)}
                         onError={tryAlternativeAudioSource}
                         key={`ayah-of-day-${selectedReciter.id}-${ayahOfTheDay.surahNumber}-${ayahOfTheDay.ayahNumber}`}
                       />
@@ -451,16 +514,29 @@ export default function QuranSection() {
             {/* Audio player for the entire surah - only show if audio is not in error state */}
             {!audioError && (
               <div className="p-4 bg-green-50 dark:bg-green-900/20 border-b border-green-100 dark:border-green-900">
-                <div className="flex items-center gap-2 mb-2">
-                  <Headphones className="h-4 w-4 text-green-600 dark:text-green-500" />
-                  <h4 className="text-sm font-medium text-green-800 dark:text-green-400">Listen to Complete Surah</h4>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Headphones className="h-4 w-4 text-green-600 dark:text-green-500" />
+                    <h4 className="text-sm font-medium text-green-800 dark:text-green-400">Listen to Complete Surah</h4>
+                  </div>
+                  <button
+                    onClick={startPlayingFullSurah}
+                    disabled={isPlayingFullSurah}
+                    className={`px-3 py-1 text-sm rounded-md ${
+                      isPlayingFullSurah
+                        ? "bg-green-200 dark:bg-green-900/50 text-green-700 dark:text-green-500 cursor-not-allowed"
+                        : "bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white"
+                    } transition-colors flex items-center gap-1`}
+                  >
+                    <Play className="h-3 w-3" />
+                    {isPlayingFullSurah ? "Playing..." : "Play All Verses"}
+                  </button>
                 </div>
-                <QuranAudioPlayer
-                  surahNumber={selectedSurah.number}
-                  reciter={selectedReciter.id}
-                  onError={tryAlternativeAudioSource}
-                  key={`complete-surah-${selectedReciter.id}-${selectedSurah.number}`}
-                />
+                {isPlayingFullSurah && currentPlayingVerseIndex && (
+                  <div className="mt-2 text-sm text-green-700 dark:text-green-500">
+                    Currently playing verse {currentPlayingVerseIndex} of {selectedSurah.numberOfAyahs}
+                  </div>
+                )}
               </div>
             )}
 
@@ -489,7 +565,12 @@ export default function QuranSection() {
                           </div>
                           {!audioError && (
                             <button
-                              onClick={() => setPlayingAyah(ayah.numberInSurah)}
+                              onClick={() => {
+                                // Stop sequential playback if user clicks on individual verse
+                                setIsPlayingFullSurah(false)
+                                setCurrentPlayingVerseIndex(null)
+                                setPlayingAyah(ayah.numberInSurah)
+                              }}
                               className="p-1 text-green-600 dark:text-green-500 hover:text-green-800 dark:hover:text-green-400 transition-colors"
                               aria-label={`Listen to Ayah ${ayah.numberInSurah}`}
                             >
@@ -512,7 +593,7 @@ export default function QuranSection() {
                               onComplete={handleAyahComplete}
                               onError={tryAlternativeAudioSource}
                               className="mt-2"
-                              key={`individual-ayah-${selectedReciter.id}-${selectedSurah.number}-${ayah.numberInSurah}`}
+                              key={`individual-ayah-${selectedReciter.id}-${selectedSurah.number}-${ayah.numberInSurah}-${isPlayingFullSurah}`}
                             />
                           </div>
                         )}

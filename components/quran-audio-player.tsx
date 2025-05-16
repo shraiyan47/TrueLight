@@ -12,6 +12,7 @@ interface QuranAudioPlayerProps {
   onComplete?: () => void
   onError?: () => void
   className?: string
+  autoPlay?: boolean
 }
 
 // Map of reciter IDs to their corresponding paths on everyayah.com
@@ -31,6 +32,7 @@ export default function QuranAudioPlayer({
   onComplete,
   onError,
   className = "",
+  autoPlay = false,
 }: QuranAudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -41,6 +43,7 @@ export default function QuranAudioPlayer({
   const [audioSource, setAudioSource] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const progressRef = useRef<HTMLDivElement | null>(null)
+  const hasCalledCompleteRef = useRef(false)
 
   // Format time in mm:ss
   const formatTime = (time: number) => {
@@ -81,6 +84,7 @@ export default function QuranAudioPlayer({
         setError(null)
         setIsPlaying(false)
         setCurrentTime(0)
+        hasCalledCompleteRef.current = false
 
         // Generate the audio URL
         const url = generateAudioUrl(surahNumber, ayahNumber)
@@ -117,13 +121,20 @@ export default function QuranAudioPlayer({
     }
 
     const handleEnded = () => {
+      console.log("Audio ended, calling onComplete")
       setIsPlaying(false)
       setCurrentTime(0)
-      if (onComplete) onComplete()
+
+      // Prevent multiple calls to onComplete
+      if (!hasCalledCompleteRef.current && onComplete) {
+        hasCalledCompleteRef.current = true
+        onComplete()
+      }
     }
 
     const handleCanPlayThrough = () => {
       setIsLoading(false)
+      // We're not auto-playing anymore - user must click play button
     }
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata)
