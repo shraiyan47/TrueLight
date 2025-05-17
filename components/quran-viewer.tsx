@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import axios from "axios"
 import QuranAudioPlayer from "@/components/quran-audio-player"
+import { Listbox, Transition } from '@headlessui/react'
+import { Fragment } from 'react'
 
 type Surah = {
     number: number
@@ -67,6 +69,7 @@ export default function QuranViewer() {
 
     const [searchVerse, setSearchVerse] = useState<string>("")
     const [highlightedVerse, setHighlightedVerse] = useState<number | null>(null)
+    const [verseNotFound, setVerseNotFound] = useState(false)
 
 
     useEffect(() => {
@@ -77,6 +80,11 @@ export default function QuranViewer() {
         const fetchAyahs = async () => {
             try {
                 setErrorMessage(null)
+                setVerseNotFound(false)
+                setSearchVerse("") // Clear search input
+                setHighlightedVerse(null) // Remove previous highlight
+                setPlayingAyahNumber(null) // Stop any playing verse
+
                 const [arabicRes, translationRes, transliterationRes] = await Promise.all([
                     axios.get(`https://api.alquran.cloud/v1/surah/${selectedSurah}/ar.alafasy`),
                     axios.get(`https://api.alquran.cloud/v1/surah/${selectedSurah}/en.asad`),
@@ -95,11 +103,14 @@ export default function QuranViewer() {
                 }))
 
                 setArabicAyahs(combined)
-                setPlayingAyahNumber(null)
 
+                // Scroll to verse 1 after rendering
                 setTimeout(() => {
-                    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-                }, 100)
+                    const firstAyahElement = ayahRefs.current[1]
+                    if (firstAyahElement) {
+                        firstAyahElement.scrollIntoView({ behavior: "smooth", block: "start" })
+                    }
+                }, 300)
             } catch {
                 setErrorMessage("Failed to load ayahs. Please try again later.")
             }
@@ -107,6 +118,9 @@ export default function QuranViewer() {
 
         fetchAyahs()
     }, [selectedSurah])
+
+
+
 
     useEffect(() => {
         if (playingAyahNumber && ayahRefs.current[playingAyahNumber]) {
@@ -156,34 +170,98 @@ export default function QuranViewer() {
                         <label htmlFor="surah" className="block text-green-800 dark:text-green-300 font-medium mb-1">
                             Select Surah
                         </label>
-                        <select
-                            id="surah"
-                            className="w-full p-2 border rounded-md dark:bg-gray-800 dark:text-white"
-                            value={selectedSurah}
-                            onChange={(e) => setSelectedSurah(Number(e.target.value))}
-                        >
-                            {surahs.map(s => (
-                                <option key={s.number} value={s.number}>
-                                    {s.number}. {s.englishName} ({s.englishNameTranslation})
-                                </option>
-                            ))}
-                        </select>
+
+
+                        <Listbox value={selectedSurah} onChange={setSelectedSurah}>
+                            <div className="relative mt-1">
+
+                                <Listbox.Button className="relative w-full cursor-pointer rounded-md bg-white dark:bg-gray-800 py-2 pl-4 pr-10 text-left border border-gray-300 dark:border-gray-700 shadow-md focus:outline-none">
+                                    <span className="block truncate">
+                                        {surahs.find(s => s.number === selectedSurah)?.englishName || "Select Surah"}
+                                    </span>
+                                    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 dark:text-gray-300">
+                                        ▾
+                                    </span>
+                                </Listbox.Button>
+
+                                <Transition
+                                    as={Fragment}
+                                    enter="transition ease-out duration-200 transform"
+                                    enterFrom="opacity-0 scale-95"
+                                    enterTo="opacity-100 scale-100"
+                                    leave="transition ease-in duration-150 transform"
+                                    leaveFrom="opacity-100 scale-100"
+                                    leaveTo="opacity-0 scale-95"
+                                >
+                                    <Listbox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-gray-800 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                                        {surahs.map((s) => (
+                                            <Listbox.Option
+                                                key={s.number}
+                                                value={s.number}
+                                                className={({ active }) =>
+                                                    `cursor-pointer select-none py-2 px-4 ${active
+                                                        ? 'bg-green-100 dark:bg-green-900 text-green-900 dark:text-white'
+                                                        : 'text-gray-900 dark:text-white'
+                                                    }`
+                                                }
+                                            >
+                                                <span className="block truncate">
+                                                    {s.number}. {s.englishName} ({s.englishNameTranslation})
+                                                </span>
+                                            </Listbox.Option>
+                                        ))}
+                                    </Listbox.Options>
+                                </Transition>
+                            </div>
+                        </Listbox>
+
+
                     </div>
 
                     <div className="w-[20%]">
                         <label htmlFor="reciter" className="block text-green-800 dark:text-green-300 font-medium mb-1">
                             Select Reciter
                         </label>
-                        <select
-                            id="reciter"
-                            className="w-full p-2 border rounded-md dark:bg-gray-800 dark:text-white"
-                            value={selectedReciter}
-                            onChange={(e) => setSelectedReciter(e.target.value)}
-                        >
-                            {RECITERS.map(r => (
-                                <option key={r.id} value={r.id}>{r.name}</option>
-                            ))}
-                        </select>
+                        <Listbox value={selectedReciter} onChange={setSelectedReciter}>
+                            <div className="relative mt-1">
+                                <Listbox.Button className="relative w-full cursor-default rounded-md bg-white dark:bg-gray-800 py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 dark:border-gray-700 focus:outline-none focus-visible:ring-green-500 focus-visible:ring-opacity-75 transition">
+                                    <span className="block truncate">
+                                        {RECITERS.find(r => r.id === selectedReciter)?.name}
+                                    </span>
+                                    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 dark:text-gray-300">
+                                        ▾
+                                    </span>
+                                </Listbox.Button>
+
+                                <Transition
+                                    as={Fragment}
+                                    leave="transition ease-in duration-100"
+                                    leaveFrom="opacity-100"
+                                    leaveTo="opacity-0"
+                                >
+                                    <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-gray-800 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                                        {RECITERS.map((reciter) => (
+                                            <Listbox.Option
+                                                key={reciter.id}
+                                                className={({ active }) =>
+                                                    `relative cursor-default select-none py-2 px-4 ${active
+                                                        ? "bg-green-100 text-green-900 dark:bg-green-700 dark:text-white"
+                                                        : "text-gray-900 dark:text-gray-200"
+                                                    }`
+                                                }
+                                                value={reciter.id}
+                                            >
+                                                {({ selected }) => (
+                                                    <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>
+                                                        {reciter.name}
+                                                    </span>
+                                                )}
+                                            </Listbox.Option>
+                                        ))}
+                                    </Listbox.Options>
+                                </Transition>
+                            </div>
+                        </Listbox>
                     </div>
 
                     <div className="w-[10%]">
@@ -196,6 +274,7 @@ export default function QuranViewer() {
                             min="1"
                             value={searchVerse}
                             onChange={(e) => setSearchVerse(e.target.value)}
+
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                     const verseNum = Number(searchVerse)
@@ -203,13 +282,23 @@ export default function QuranViewer() {
                                     if (target) {
                                         target.scrollIntoView({ behavior: "smooth", block: "center" })
                                         setHighlightedVerse(verseNum)
-                                        setSearchVerse("") // Clear input
+                                        setSearchVerse("")
+                                        setVerseNotFound(false)
+                                    } else {
+                                        setVerseNotFound(true)
                                     }
                                 }
                             }}
+
                             placeholder="e.g. 5"
                             className="w-full p-2 border rounded-md dark:bg-gray-800 dark:text-white"
                         />
+                        {/* {verseNotFound && (
+                            <div className="text-sm text-red-600 mt-1">
+                                Verse not found in this Surah.
+                            </div>
+                        )} */}
+
                     </div>
 
                     <div className="w-[10%]">
@@ -246,6 +335,7 @@ export default function QuranViewer() {
                         <div
                             key={ayah.numberInSurah}
                             ref={el => { ayahRefs.current[ayah.numberInSurah] = el }}
+
                             className={`rounded-md p-4 shadow transition-colors duration-300 border-l-4
                                     ${isPlaying ? "border-green-500" : "border-transparent"}
                                     ${highlightedVerse === ayah.numberInSurah
