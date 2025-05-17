@@ -388,7 +388,7 @@ useEffect(() => {
 
   if (loading && !prayerTimes.length) {
     return (
-      <section className="py-12 bg-white dark:bg-night-700 transition-colors">
+      <section className="py-12 bg-white dark:bg-night-800 transition-colors">
         <div className="container mx-auto">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 dark:border-sand-500 mb-4"></div>
@@ -400,7 +400,7 @@ useEffect(() => {
   }
 
   return (
-    <section className="py-8 bg-white dark:bg-night-700 transition-colors">
+    <section className="py-8 bg-white dark:bg-night-800 transition-colors">
       <div className="container mx-auto px-4 max-w-7xl">
         <h2 className="text-2xl font-bold text-center mb-8 text-green-800 dark:font-bold dark:text-sand-300 transition-colors">
           Prayer Times & Hijri Calendar

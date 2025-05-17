@@ -1,12 +1,12 @@
 export default function HadithSection() {
   return (
-    <section className="py-8 bg-white dark:bg-night-700 transition-colors">
+    <section className="py-8 bg-white dark:bg-night-800 transition-colors">
       <div className="container mx-auto px-4 max-w-7xl">
         <h2 className="text-2xl font-bold text-center mb-8 text-green-800 dark:font-bold dark:text-sand-300 transition-colors">
           Hadith of the Day
         </h2>
 
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="bg-white dark:bg-night-500 rounded-lg shadow border border-green-100 dark:border-night-300 card-bg overflow-hidden transition-colors">
             <div className="flex items-center gap-2 p-4 border-b border-green-100 dark:border-night-200 card-header transition-colors">
               <svg

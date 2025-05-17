@@ -50,13 +50,13 @@ export default function Header() {
             Qibla
           </Link> */}
           <Link
-            href="/about"
+            href="/blog"
             className="text-green-800 dark:text-sand-300 hover:text-green-600 dark:hover:text-sand-200 font-medium nav-link"
           >
             Blog
           </Link>
           <Link
-            href="/contact"
+            href="/donate"
             className="text-green-800 dark:text-sand-300 hover:text-green-600 dark:hover:text-sand-200 font-medium nav-link"
           >
             Donate

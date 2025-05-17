@@ -7,6 +7,7 @@ import Footer from "@/components/footer"
 import SehriIftaarTimes from "@/components/sehri-iftaar-times"
 import PrayerTimeTracker from "@/components/sehri&iftaar-time-tracker"
 import IslamicTools from "@/components/islamic-tools"
+import BlogSection from "@/components/blog-section"
 
 export default function Home() {
   return (
@@ -21,6 +22,7 @@ export default function Home() {
           <PrayerTimeTracker />
         </div> */}
         <IslamicTools />
+        <BlogSection />
 
       </main>
       <Footer />
