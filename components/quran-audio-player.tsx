@@ -1,16 +1,10 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useRef, useEffect } from "react"
-import {
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  Volume2,
-  VolumeX,
-  Loader2,
-  AlertCircle,
-} from "lucide-react"
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2, AlertCircle } from 'lucide-react'
+import { useTheme } from "@/components/theme-provider"
 
 interface QuranAudioPlayerProps {
   surahNumber: number
@@ -50,6 +44,8 @@ export default function QuranAudioPlayer({
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const progressRef = useRef<HTMLDivElement | null>(null)
   const hasCalledCompleteRef = useRef(false)
+  const { theme } = useTheme()
+  const isDarkMode = theme === "dark"
 
   // Format time in mm:ss
   const formatTime = (time: number) => {
@@ -215,7 +211,19 @@ export default function QuranAudioPlayer({
   }
 
   return (
-    <div className={`rounded-md border border-green-100 dark:border-green-900 p-3 ${className}`}>
+    <div
+      className={`rounded-md border p-3 ${className} ${
+        isDarkMode ? "" : "border-green-100 bg-white"
+      }`}
+      style={
+        isDarkMode
+          ? {
+              backgroundColor: "#121212",
+              borderColor: "#2a2a2a",
+            }
+          : {}
+      }
+    >
       <audio
         ref={audioRef}
         preload="metadata"
@@ -238,70 +246,141 @@ export default function QuranAudioPlayer({
         {/* Progress bar */}
         <div
           ref={progressRef}
-          className="h-2 bg-green-100 dark:bg-green-900/50 rounded-full mb-2 cursor-pointer relative overflow-hidden"
+          className={`h-2 rounded-full mb-2 cursor-pointer relative overflow-hidden ${
+            isDarkMode ? "" : "bg-green-100"
+          }`}
           onClick={handleSeek}
           aria-label="Seek audio progress"
           role="slider"
           aria-valuemin={0}
           aria-valuemax={duration}
           aria-valuenow={currentTime}
+          style={isDarkMode ? { backgroundColor: "#2a2a2a" } : {}}
         >
           <div
-            className="absolute top-0 left-0 h-full bg-green-600 dark:bg-green-500 rounded-full transition-width duration-200 ease-linear"
-            style={{ width: `${(currentTime / duration) * 100}%` }}
+            className={`absolute top-0 left-0 h-full rounded-full transition-all duration-200 ease-linear ${
+              isDarkMode ? "" : "bg-green-600"
+            }`}
+            style={
+              isDarkMode
+                ? {
+                    width: `${(currentTime / duration) * 100}%`,
+                    backgroundColor: "#c4b69d",
+                  }
+                : { width: `${(currentTime / duration) * 100}%` }
+            }
           />
         </div>
 
         {/* Controls */}
-        <div className="flex items-center space-x-1 text-green-700 dark:text-green-400">
-          <button
-            aria-label="Skip back 10 seconds"
-            onClick={() => handleSkip(-10)}
-            className="p-1 hover:text-green-900 dark:hover:text-green-200 transition"
-          >
-            <SkipBack className="h-4 w-4" />
-          </button>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              aria-label="Skip back 10 seconds"
+              onClick={() => handleSkip(-10)}
+              className={`p-1 transition-colors ${isDarkMode ? "" : "text-green-700 hover:text-green-800"}`}
+              style={
+                isDarkMode
+                  ? {
+                      color: "#c4b69d",
+                    }
+                  : {}
+              }
+              onMouseOver={(e) => {
+                if (isDarkMode) e.currentTarget.style.color = "#e0d6c2"
+              }}
+              onMouseOut={(e) => {
+                if (isDarkMode) e.currentTarget.style.color = "#c4b69d"
+              }}
+            >
+              <SkipBack className="h-4 w-4" />
+            </button>
 
-          <button
-            aria-label={isPlaying ? "Pause audio" : "Play audio"}
-            onClick={togglePlay}
-            className="p-2 bg-green-200 dark:bg-green-700 rounded-full hover:bg-green-300 dark:hover:bg-green-600 transition"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <Loader2 className="animate-spin h-5 w-5 text-green-700 dark:text-green-400" />
-            ) : isPlaying ? (
-              <Pause className="h-5 w-5" />
-            ) : (
-              <Play className="h-5 w-5" />
-            )}
-          </button>
+            <button
+              aria-label={isPlaying ? "Pause audio" : "Play audio"}
+              onClick={togglePlay}
+              disabled={isLoading}
+              className={`p-2 rounded-full transition-colors ${
+                isDarkMode
+                  ? ""
+                  : isLoading
+                  ? "bg-green-100 text-green-400 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700 text-white"
+              }`}
+              style={
+                isDarkMode
+                  ? {
+                      backgroundColor: isLoading ? "#1a1a1a" : "#2a2a2a",
+                      color: isLoading ? "#a39884" : "#e0d6c2",
+                    }
+                  : {}
+              }
+              onMouseOver={(e) => {
+                if (isDarkMode && !isLoading) e.currentTarget.style.backgroundColor = "#3a3a3a"
+              }}
+              onMouseOut={(e) => {
+                if (isDarkMode && !isLoading) e.currentTarget.style.backgroundColor = "#2a2a2a"
+              }}
+            >
+              {isLoading ? (
+                <Loader2 className="animate-spin h-5 w-5" />
+              ) : isPlaying ? (
+                <Pause className="h-5 w-5" />
+              ) : (
+                <Play className="h-5 w-5" />
+              )}
+            </button>
 
-          <button
-            aria-label="Skip forward 10 seconds"
-            onClick={() => handleSkip(10)}
-            className="p-1 hover:text-green-900 dark:hover:text-green-200 transition"
-          >
-            <SkipForward className="h-4 w-4" />
-          </button>
+            <button
+              aria-label="Skip forward 10 seconds"
+              onClick={() => handleSkip(10)}
+              className={`p-1 transition-colors ${isDarkMode ? "" : "text-green-700 hover:text-green-800"}`}
+              style={
+                isDarkMode
+                  ? {
+                      color: "#c4b69d",
+                    }
+                  : {}
+              }
+              onMouseOver={(e) => {
+                if (isDarkMode) e.currentTarget.style.color = "#e0d6c2"
+              }}
+              onMouseOut={(e) => {
+                if (isDarkMode) e.currentTarget.style.color = "#c4b69d"
+              }}
+            >
+              <SkipForward className="h-4 w-4" />
+            </button>
 
-          <button
-            aria-label={isMuted ? "Unmute audio" : "Mute audio"}
-            onClick={toggleMute}
-            className="p-1 hover:text-green-900 dark:hover:text-green-200 transition"
-          >
-            {isMuted ? (
-              <VolumeX className="h-4 w-4" />
-            ) : (
-              <Volume2 className="h-4 w-4" />
-            )}
-          </button>
+            <button
+              aria-label={isMuted ? "Unmute audio" : "Mute audio"}
+              onClick={toggleMute}
+              className={`p-1 transition-colors ${isDarkMode ? "" : "text-green-700 hover:text-green-800"}`}
+              style={
+                isDarkMode
+                  ? {
+                      color: "#c4b69d",
+                    }
+                  : {}
+              }
+              onMouseOver={(e) => {
+                if (isDarkMode) e.currentTarget.style.color = "#e0d6c2"
+              }}
+              onMouseOut={(e) => {
+                if (isDarkMode) e.currentTarget.style.color = "#c4b69d"
+              }}
+            >
+              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </button>
+          </div>
 
-          <div className="text-xs tabular-nums w-20 text-right select-none ml-2">
+          <div
+            className={`text-xs tabular-nums select-none ${isDarkMode ? "" : "text-green-700"}`}
+            style={isDarkMode ? { color: "#a39884" } : {}}
+          >
             {formatTime(currentTime)} / {formatTime(duration)}
           </div>
         </div>
-
       </div>
     </div>
   )

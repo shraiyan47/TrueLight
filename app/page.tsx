@@ -6,6 +6,7 @@ import QiblaFinder from "@/components/qibla-finder"
 import Footer from "@/components/footer"
 import SehriIftaarTimes from "@/components/sehri-iftaar-times"
 import PrayerTimeTracker from "@/components/sehri&iftaar-time-tracker"
+import IslamicTools from "@/components/islamic-tools"
 
 export default function Home() {
   return (
@@ -15,10 +16,11 @@ export default function Home() {
         <PrayerAndCalendarSection />
         <QuranSection />
         <HadithSection />
-        <div className="container justify-center flex flex-col md:flex-row gap-4">
+        {/* <div className="container justify-center flex flex-col md:flex-row gap-4">
           <QiblaFinder />
           <PrayerTimeTracker />
-        </div>
+        </div> */}
+        <IslamicTools />
 
       </main>
       <Footer />
