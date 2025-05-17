@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { BookOpen, Search } from "lucide-react"
 import Link from "next/link"
+import Header from "@/components/header"
 
 interface HadithCollection {
   id: string
@@ -21,7 +22,15 @@ interface Hadith {
   number: number
 }
 
+
 export default function HadithPage() {
+  // return (
+  //   <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
+  //     <Header />
+      
+  //   </div>
+  // )
+
   // This would be fetched from an API or database
   const collections: HadithCollection[] = [
     {
@@ -85,6 +94,8 @@ export default function HadithPage() {
   ]
 
   return (
+   <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
+      <Header />
     <div className="container py-12">
       <h1 className="text-3xl font-bold text-center mb-8">Hadith Collections</h1>
 
@@ -137,6 +148,7 @@ export default function HadithPage() {
           Return to Home
         </Link>
       </div>
+    </div>
     </div>
   )
 }

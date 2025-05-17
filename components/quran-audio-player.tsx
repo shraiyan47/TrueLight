@@ -1,9 +1,16 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useRef, useEffect } from "react"
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2, AlertCircle } from "lucide-react"
+import {
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Volume2,
+  VolumeX,
+  Loader2,
+  AlertCircle,
+} from "lucide-react"
 
 interface QuranAudioPlayerProps {
   surahNumber: number
@@ -15,7 +22,6 @@ interface QuranAudioPlayerProps {
   autoPlay?: boolean
 }
 
-// Map of reciter IDs to their corresponding paths on everyayah.com
 const RECITER_PATHS: Record<string, string> = {
   "ar.alafasy": "Alafasy_128kbps",
   "ar.abdulbasitmurattal": "AbdulSamad_64kbps_QuranExplorer.Com",
@@ -61,22 +67,17 @@ export default function QuranAudioPlayer({
 
   // Generate audio URL using everyayah.com API
   const generateAudioUrl = (surah: number, ayah?: number): string => {
-    const reciterPath = RECITER_PATHS[reciter] || RECITER_PATHS["ar.alafasy"] // Fallback to Alafasy if reciter not found
+    const reciterPath = RECITER_PATHS[reciter] || RECITER_PATHS["ar.alafasy"] // fallback
     const paddedSurah = padNumber(surah, 3)
-
     if (ayah) {
-      // For individual ayah - CORRECT FORMAT
       const paddedAyah = padNumber(ayah, 3)
       return `https://everyayah.com/data/${reciterPath}/${paddedSurah}${paddedAyah}.mp3`
     } else {
-      // For complete surah, we'll use a different approach
-      // Since everyayah.com doesn't provide complete surah files, we'll just play the first ayah
-      // In a real app, you would implement a playlist to play all ayahs sequentially
       return `https://everyayah.com/data/${reciterPath}/${paddedSurah}001.mp3`
     }
   }
 
-  // Load audio when surah or reciter changes
+  // Load audio on surah, ayah, or reciter change
   useEffect(() => {
     const loadAudio = async () => {
       try {
@@ -86,7 +87,6 @@ export default function QuranAudioPlayer({
         setCurrentTime(0)
         hasCalledCompleteRef.current = false
 
-        // Generate the audio URL
         const url = generateAudioUrl(surahNumber, ayahNumber)
         setAudioSource(url)
 
@@ -95,7 +95,6 @@ export default function QuranAudioPlayer({
           audioRef.current.load()
         }
       } catch (err) {
-        console.error("Error loading audio:", err)
         setError("Failed to load audio. Please try again.")
         setIsLoading(false)
         if (onError) onError()
@@ -105,10 +104,31 @@ export default function QuranAudioPlayer({
     loadAudio()
   }, [surahNumber, ayahNumber, reciter])
 
-  // Set up audio event listeners
+  // Handle autoPlay when audioSource or autoPlay changes
+  useEffect(() => {
+    if (autoPlay && audioRef.current && audioSource) {
+      const playPromise = audioRef.current.play()
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true)
+          })
+          .catch((err) => {
+            setError("Playback failed. Check network or audio availability.")
+            setIsPlaying(false)
+            if (onError) onError()
+          })
+      }
+    } else if (!autoPlay && audioRef.current) {
+      // Pause if autoPlay is false
+      audioRef.current.pause()
+      setIsPlaying(false)
+    }
+  }, [autoPlay, audioSource])
+
+  // Audio event listeners
   useEffect(() => {
     const audio = audioRef.current
-
     if (!audio) return
 
     const handleLoadedMetadata = () => {
@@ -121,11 +141,8 @@ export default function QuranAudioPlayer({
     }
 
     const handleEnded = () => {
-      console.log("Audio ended, calling onComplete")
       setIsPlaying(false)
       setCurrentTime(0)
-
-      // Prevent multiple calls to onComplete
       if (!hasCalledCompleteRef.current && onComplete) {
         hasCalledCompleteRef.current = true
         onComplete()
@@ -134,7 +151,6 @@ export default function QuranAudioPlayer({
 
     const handleCanPlayThrough = () => {
       setIsLoading(false)
-      // We're not auto-playing anymore - user must click play button
     }
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata)
@@ -150,7 +166,7 @@ export default function QuranAudioPlayer({
     }
   }, [onComplete])
 
-  // Handle play/pause
+  // Play/Pause toggle
   const togglePlay = () => {
     if (isLoading || !audioRef.current) return
 
@@ -159,19 +175,11 @@ export default function QuranAudioPlayer({
       setIsPlaying(false)
     } else {
       const playPromise = audioRef.current.play()
-
       if (playPromise !== undefined) {
         playPromise
-          .then(() => {
-            setIsPlaying(true)
-          })
+          .then(() => setIsPlaying(true))
           .catch((err) => {
-            console.error("Error playing audio:", err)
-            setError(
-              `Playback failed. This may be due to network issues or the reciter's audio for ${
-                ayahNumber ? `ayah ${ayahNumber}` : `surah ${surahNumber}`
-              } may be unavailable.`,
-            )
+            setError("Playback failed. Check network or audio availability.")
             setIsPlaying(false)
             if (onError) onError()
           })
@@ -179,31 +187,29 @@ export default function QuranAudioPlayer({
     }
   }
 
-  // Handle mute toggle
+  // Mute toggle
   const toggleMute = () => {
-    if (audioRef.current) {
-      audioRef.current.muted = !isMuted
-      setIsMuted(!isMuted)
-    }
+    if (!audioRef.current) return
+    audioRef.current.muted = !isMuted
+    setIsMuted(!isMuted)
   }
 
-  // Handle seeking
+  // Seek audio position
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!progressRef.current || !audioRef.current) return
-
-    const progressRect = progressRef.current.getBoundingClientRect()
-    const seekPosition = (e.clientX - progressRect.left) / progressRect.width
-    const seekTime = duration * seekPosition
-
+    const rect = progressRef.current.getBoundingClientRect()
+    const clickPos = (e.clientX - rect.left) / rect.width
+    const seekTime = duration * clickPos
     audioRef.current.currentTime = seekTime
     setCurrentTime(seekTime)
   }
 
-  // Handle skip forward/backward
+  // Skip seconds forward/back
   const handleSkip = (seconds: number) => {
     if (!audioRef.current) return
-
-    const newTime = Math.min(Math.max(currentTime + seconds, 0), duration)
+    let newTime = currentTime + seconds
+    if (newTime < 0) newTime = 0
+    if (newTime > duration) newTime = duration
     audioRef.current.currentTime = newTime
     setCurrentTime(newTime)
   }
@@ -214,10 +220,7 @@ export default function QuranAudioPlayer({
         ref={audioRef}
         preload="metadata"
         onError={() => {
-          console.error("Audio failed to load:", audioSource)
-          setError(
-            `Unable to load audio for ${ayahNumber ? `ayah ${ayahNumber}` : `surah ${surahNumber}`}. Please try another reciter or check your connection.`,
-          )
+          setError(`Unable to load audio for ${ayahNumber ? `ayah ${ayahNumber}` : `surah ${surahNumber}`}.`)
           setIsLoading(false)
           setIsPlaying(false)
           if (onError) onError()
@@ -237,64 +240,68 @@ export default function QuranAudioPlayer({
           ref={progressRef}
           className="h-2 bg-green-100 dark:bg-green-900/50 rounded-full mb-2 cursor-pointer relative overflow-hidden"
           onClick={handleSeek}
+          aria-label="Seek audio progress"
+          role="slider"
+          aria-valuemin={0}
+          aria-valuemax={duration}
+          aria-valuenow={currentTime}
         >
           <div
-            className="absolute top-0 left-0 h-full bg-green-600 dark:bg-green-500 rounded-full"
+            className="absolute top-0 left-0 h-full bg-green-600 dark:bg-green-500 rounded-full transition-width duration-200 ease-linear"
             style={{ width: `${(currentTime / duration) * 100}%` }}
-          ></div>
+          />
         </div>
 
         {/* Controls */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleSkip(-10)}
-              className="p-1 text-green-700 dark:text-green-500 hover:text-green-800 dark:hover:text-green-400 transition-colors"
-              aria-label="Skip backward 10 seconds"
-            >
-              <SkipBack className="h-4 w-4" />
-            </button>
+        <div className="flex items-center space-x-1 text-green-700 dark:text-green-400">
+          <button
+            aria-label="Skip back 10 seconds"
+            onClick={() => handleSkip(-10)}
+            className="p-1 hover:text-green-900 dark:hover:text-green-200 transition"
+          >
+            <SkipBack className="h-4 w-4" />
+          </button>
 
-            <button
-              onClick={togglePlay}
-              disabled={isLoading}
-              className={`p-2 rounded-full ${
-                isLoading
-                  ? "bg-green-100 dark:bg-green-900/30 text-green-400 dark:text-green-700 cursor-not-allowed"
-                  : "bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white"
-              } transition-colors`}
-              aria-label={isPlaying ? "Pause" : "Play"}
-            >
-              {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : isPlaying ? (
-                <Pause className="h-5 w-5" />
-              ) : (
-                <Play className="h-5 w-5" />
-              )}
-            </button>
+          <button
+            aria-label={isPlaying ? "Pause audio" : "Play audio"}
+            onClick={togglePlay}
+            className="p-2 bg-green-200 dark:bg-green-700 rounded-full hover:bg-green-300 dark:hover:bg-green-600 transition"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="animate-spin h-5 w-5 text-green-700 dark:text-green-400" />
+            ) : isPlaying ? (
+              <Pause className="h-5 w-5" />
+            ) : (
+              <Play className="h-5 w-5" />
+            )}
+          </button>
 
-            <button
-              onClick={() => handleSkip(10)}
-              className="p-1 text-green-700 dark:text-green-500 hover:text-green-800 dark:hover:text-green-400 transition-colors"
-              aria-label="Skip forward 10 seconds"
-            >
-              <SkipForward className="h-4 w-4" />
-            </button>
+          <button
+            aria-label="Skip forward 10 seconds"
+            onClick={() => handleSkip(10)}
+            className="p-1 hover:text-green-900 dark:hover:text-green-200 transition"
+          >
+            <SkipForward className="h-4 w-4" />
+          </button>
 
-            <button
-              onClick={toggleMute}
-              className="p-1 text-green-700 dark:text-green-500 hover:text-green-800 dark:hover:text-green-400 transition-colors"
-              aria-label={isMuted ? "Unmute" : "Mute"}
-            >
-              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            </button>
-          </div>
+          <button
+            aria-label={isMuted ? "Unmute audio" : "Mute audio"}
+            onClick={toggleMute}
+            className="p-1 hover:text-green-900 dark:hover:text-green-200 transition"
+          >
+            {isMuted ? (
+              <VolumeX className="h-4 w-4" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
+          </button>
 
-          <div className="text-xs text-green-700 dark:text-green-500">
-            {formatTime(currentTime)} / {duration ? formatTime(duration) : "0:00"}
+          <div className="text-xs tabular-nums w-20 text-right select-none ml-2">
+            {formatTime(currentTime)} / {formatTime(duration)}
           </div>
         </div>
+
       </div>
     </div>
   )
