@@ -65,6 +65,10 @@ export default function QuranViewer() {
     const ayahRefs = useRef<Record<number, HTMLDivElement | null>>({})
     const topRef = useRef<HTMLDivElement | null>(null)
 
+    const [searchVerse, setSearchVerse] = useState<string>("")
+    const [highlightedVerse, setHighlightedVerse] = useState<number | null>(null)
+
+
     useEffect(() => {
         axios.get("https://api.alquran.cloud/v1/surah").then(res => setSurahs(res.data.data))
     }, [])
@@ -104,6 +108,26 @@ export default function QuranViewer() {
         fetchAyahs()
     }, [selectedSurah])
 
+    useEffect(() => {
+        if (playingAyahNumber && ayahRefs.current[playingAyahNumber]) {
+            ayahRefs.current[playingAyahNumber]?.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+        }
+    }, [playingAyahNumber]);
+
+    useEffect(() => {
+        if (highlightedVerse !== null) {
+            const timer = setTimeout(() => {
+                setHighlightedVerse(null)
+            }, 5000)
+            return () => clearTimeout(timer)
+        }
+    }, [highlightedVerse])
+
+
+
     const handleAyahComplete = (currentAyahNumber: number) => {
         const nextIndex = arabicAyahs.findIndex(a => a.numberInSurah === currentAyahNumber) + 1
         if (nextIndex < arabicAyahs.length) {
@@ -128,7 +152,7 @@ export default function QuranViewer() {
                 ref={topRef}
             >
                 <div className="flex flex-wrap gap-4 items-center justify-between">
-                    <div className="flex-1 min-w-[60%]">
+                    <div className="flex-1 min-w-[50%]">
                         <label htmlFor="surah" className="block text-green-800 dark:text-green-300 font-medium mb-1">
                             Select Surah
                         </label>
@@ -163,6 +187,32 @@ export default function QuranViewer() {
                     </div>
 
                     <div className="w-[10%]">
+                        <label htmlFor="verseSearch" className="block text-green-800 dark:text-green-300 font-medium mb-1">
+                            Verse #
+                        </label>
+                        <input
+                            id="verseSearch"
+                            type="number"
+                            min="1"
+                            value={searchVerse}
+                            onChange={(e) => setSearchVerse(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    const verseNum = Number(searchVerse)
+                                    const target = ayahRefs.current[verseNum]
+                                    if (target) {
+                                        target.scrollIntoView({ behavior: "smooth", block: "center" })
+                                        setHighlightedVerse(verseNum)
+                                        setSearchVerse("") // Clear input
+                                    }
+                                }
+                            }}
+                            placeholder="e.g. 5"
+                            className="w-full p-2 border rounded-md dark:bg-gray-800 dark:text-white"
+                        />
+                    </div>
+
+                    <div className="w-[10%]">
                         <button
                             onClick={playAll}
                             className="h-fit mt-6 w-full py-2 bg-green-600 text-white rounded-md shadow hover:bg-green-700 transition"
@@ -170,6 +220,7 @@ export default function QuranViewer() {
                             ▶ Play All
                         </button>
                     </div>
+
                 </div>
             </div>
 
@@ -179,11 +230,11 @@ export default function QuranViewer() {
             )}
 
             {/* Bismillah */}
-            {selectedSurah !== 1 && selectedSurah !== 9 && (
+            {/* {selectedSurah !== 1 && selectedSurah !== 9 && (
                 <div className="text-center text-3xl font-serif text-green-700 dark:text-green-300 mb-6 transition duration-300">
                     ﷽
                 </div>
-            )}
+            )} */}
 
             {/* Ayah List */}
             <div className="space-y-6 overflow-y-auto scrollbar-hide max-h-[70vh] transition duration-300">
@@ -195,7 +246,15 @@ export default function QuranViewer() {
                         <div
                             key={ayah.numberInSurah}
                             ref={el => { ayahRefs.current[ayah.numberInSurah] = el }}
-                            className={`rounded-md p-4 bg-white dark:bg-gray-800 shadow transition-colors duration-300 border-l-4 ${isPlaying ? "border-green-500" : "border-transparent"}`}
+                            className={`rounded-md p-4 shadow transition-colors duration-300 border-l-4
+                                    ${isPlaying ? "border-green-500" : "border-transparent"}
+                                    ${highlightedVerse === ayah.numberInSurah
+                                    ? "border-l-4 border-green-400 dark:border-green-300 bg-[#f5fff7] dark:bg-gray-900"
+                                    : ""}
+                                    bg-white dark:bg-gray-800
+                                    `}
+
+
                         >
                             <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                                 Verse {ayah.numberInSurah}
