@@ -52,22 +52,22 @@ const featuredBlogPosts: BlogPost[] = [
 
 export default function BlogSection() {
   return (
-    <section className="py-12 bg-gray-50 dark:bg-night-800 transition-colors">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <section className="py-8 bg-gray-50 dark:bg-night-800 transition-colors">
+      <div className="container mx-auto px-0 max-w-5xl">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-bold text-green-800 dark:font-bold dark:text-sand-300 section-title transition-colors">
             Islamic Knowledge
           </h2>
-          {/* <Link
+          <Link
             href="/blog"
-            className="text-green-600 dark:text-sand-400 hover:text-green-800 dark:hover:text-sand-300 flex items-center gap-1 nav-link transition-colors"
+            className="font-bold text-green-600 dark:text-sand-400 hover:text-green-800 dark:hover:text-sand-300 flex items-center gap-1 nav-link transition-colors"
           >
-            View All Articles
+            View History of Islam
             <ArrowRight className="h-4 w-4" />
-          </Link> */}
+          </Link>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-7">
           {featuredBlogPosts.map((post) => (
             <div
               key={post.id}
