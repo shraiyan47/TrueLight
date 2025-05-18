@@ -57,7 +57,7 @@ export default function Header() {
           </Link>
           <Link
             href="/donate"
-            className="text-green-800 dark:text-sand-300 hover:text-green-600 dark:hover:text-sand-200 font-medium nav-link"
+            className="px-3 py-1 bg-green-600 hover:bg-green-700 dark:bg-sand-700 dark:hover:bg-sand-600 text-white dark:text-sand-200 rounded-md transition-colors inline-flex items-center"
           >
             Donate
           </Link>
@@ -134,15 +134,15 @@ export default function Header() {
               Qibla
             </Link> */}
             <Link
-              href="/about"
+              href="/blog"
               className="py-2 text-green-800 dark:text-sand-300 hover:text-green-600 dark:hover:text-sand-200 font-medium nav-link"
               onClick={() => setMobileMenuOpen(false)}
             >
               Blog
             </Link>
             <Link
-              href="/contact"
-              className="py-2 text-green-800 dark:text-sand-300 hover:text-green-600 dark:hover:text-sand-200 font-medium nav-link"
+              href="/donate"
+              className="px-3 py-1 bg-green-600 hover:bg-green-700 dark:bg-sand-700 dark:hover:bg-sand-600 text-white dark:text-sand-100 rounded-md transition-colors inline-flex items-center"
               onClick={() => setMobileMenuOpen(false)}
             >
               Donate

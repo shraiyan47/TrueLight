@@ -60,7 +60,7 @@ export default function BlogSection() {
           </h2>
           <Link
             href="/blog"
-            className="font-bold text-green-600 dark:text-sand-400 hover:text-green-800 dark:hover:text-sand-300 flex items-center gap-1 nav-link transition-colors"
+            className="font-semibold text-green-600 dark:text-sand-400 hover:text-green-800 dark:hover:text-sand-300 flex items-center gap-1 nav-link transition-colors"
           >
             View History of Islam
             <ArrowRight className="h-4 w-4" />

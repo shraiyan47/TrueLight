@@ -27,7 +27,7 @@ export default function HadithPage() {
   // return (
   //   <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
   //     <Header />
-      
+
   //   </div>
   // )
 
@@ -94,61 +94,61 @@ export default function HadithPage() {
   ]
 
   return (
-   <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-night-700 flex flex-col transition-colors">
       <Header />
-    <div className="container py-12">
-      <h1 className="text-3xl font-bold text-center mb-8">Hadith Collections</h1>
+      <div className="container py-12">
+        <h1 className="text-3xl font-bold text-center mb-2 text-green-800 dark:font-bold dark:text-sand-300 transition-colors">Hadith Collections</h1>
 
-      <div className="relative mb-8 max-w-md mx-auto">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input type="search" placeholder="Search hadith..." className="pl-8" />
-      </div>
+        <div className="relative mb-8 max-w-md mx-auto">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input type="search" placeholder="Search hadith..." className="pl-8" />
+        </div>
 
-      <Tabs defaultValue="bukhari" className="w-full">
-        <TabsList className="grid grid-cols-2 max-w-md mx-auto mb-8">
-          <TabsTrigger value="bukhari">Sahih al-Bukhari</TabsTrigger>
-          <TabsTrigger value="muslim">Sahih Muslim</TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="bukhari" className="w-full">
+          <TabsList className="grid grid-cols-2 max-w-md mx-auto mb-8">
+            <TabsTrigger value="bukhari">Sahih al-Bukhari</TabsTrigger>
+            <TabsTrigger value="muslim">Sahih Muslim</TabsTrigger>
+          </TabsList>
 
-        {collections.map((collection) => (
-          <TabsContent key={collection.id} value={collection.id}>
-            <Card className="shadow-md mb-8">
-              <CardHeader className="border-b">
-                <CardTitle className="flex flex-col items-center gap-2 text-center">
-                  <BookOpen className="h-6 w-6 text-primary" />
-                  <div>
-                    <h2 className="text-2xl font-bold">{collection.name}</h2>
-                    <p className="text-xl arabic-text mt-1">{collection.arabicName}</p>
-                  </div>
-                </CardTitle>
-                <p className="text-muted-foreground text-center mt-2">{collection.description}</p>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-8">
-                  {collection.hadiths.map((hadith) => (
-                    <div key={hadith.id} className="pb-6 border-b last:border-0">
-                      <p className="italic mb-4">{hadith.text}</p>
-                      <div>
-                        <p className="font-medium">Narrator: {hadith.narrator}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Source: {hadith.source}, {hadith.book}, No. {hadith.number}
-                        </p>
-                      </div>
+          {collections.map((collection) => (
+            <TabsContent key={collection.id} value={collection.id}>
+              <Card className="shadow-md mb-8">
+                <CardHeader className="border-b">
+                  <CardTitle className="flex flex-col items-center gap-2 text-center">
+                    <BookOpen className="h-6 w-6 text-primary" />
+                    <div>
+                      <h2 className="text-2xl font-bold">{collection.name}</h2>
+                      <p className="text-xl arabic-text mt-1">{collection.arabicName}</p>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ))}
-      </Tabs>
+                  </CardTitle>
+                  <p className="text-muted-foreground text-center mt-2">{collection.description}</p>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-8">
+                    {collection.hadiths.map((hadith) => (
+                      <div key={hadith.id} className="pb-6 border-b last:border-0">
+                        <p className="italic mb-4">{hadith.text}</p>
+                        <div>
+                          <p className="font-medium">Narrator: {hadith.narrator}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Source: {hadith.source}, {hadith.book}, No. {hadith.number}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ))}
+        </Tabs>
 
-      <div className="text-center">
-        <Link href="/" className="text-primary hover:underline">
-          Return to Home
-        </Link>
+        <div className="text-center">
+          <Link href="/" className="text-primary hover:underline">
+            Return to Home
+          </Link>
+        </div>
       </div>
-    </div>
     </div>
   )
 }

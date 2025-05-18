@@ -351,16 +351,16 @@ export default function QuranSection() {
                           Listen to Recitation
                         </h4>
                       </div>
-                      <div className="relative">
-                        <button
+                      {/* <div className="relative"> */}
+                        {/* <button
                           onClick={() => setShowReciters(!showReciters)}
                           className="flex items-center gap-1 text-xs px-2 py-1 bg-green-100 dark:bg-night-300 hover:bg-green-200 dark:hover:bg-night-200 text-green-800 dark:text-sand-300 rounded-md transition-colors btn-secondary"
                         >
                           {selectedReciter.name.split(" ")[0]}
                           {showReciters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                        </button>
+                        </button> */}
 
-                        {showReciters && (
+                        {/* {showReciters && (
                           <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-night-400 card-bg border border-green-100 dark:border-night-300 rounded-md shadow-lg z-10">
                             <div className="p-2">
                               <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -386,8 +386,8 @@ export default function QuranSection() {
                               </div>
                             </div>
                           </div>
-                        )}
-                      </div>
+                        )} */}
+                      {/* </div> */}
                     </div>
 
                     {!audioError ? (
