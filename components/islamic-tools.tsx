@@ -24,7 +24,7 @@ export default function IslamicTools() {
                                 Find the direction to the Kaaba in Mecca from your current location.
                             </p>
                             <a
-                                href="#qibla-finder"
+                                href="/qibla"
                                 className="px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-sand-700 dark:hover:bg-sand-600 text-white dark:text-sand-100 rounded-md transition-colors inline-flex items-center"
                             >
                                 Find Qibla
