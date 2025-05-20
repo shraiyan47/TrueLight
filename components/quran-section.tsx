@@ -313,7 +313,7 @@ export default function QuranSection() {
   return (
     <section className="py-8 bg-gray-50 dark:bg-night-800 transition-colors">
       <div className="container mx-auto px-4">
-        <h2 className="text-2xl font-bold text-center mb-8 text-green-800 dark:font-bold dark:text-sand-300 transition-colors">
+        <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 text-green-800 dark:text-sand-300 transition-colors">
           The Holy Quran
         </h2>
 
@@ -352,7 +352,7 @@ export default function QuranSection() {
                         </h4>
                       </div>
                       {/* <div className="relative"> */}
-                        {/* <button
+                      {/* <button
                           onClick={() => setShowReciters(!showReciters)}
                           className="flex items-center gap-1 text-xs px-2 py-1 bg-green-100 dark:bg-night-300 hover:bg-green-200 dark:hover:bg-night-200 text-green-800 dark:text-sand-300 rounded-md transition-colors btn-secondary"
                         >
@@ -360,7 +360,7 @@ export default function QuranSection() {
                           {showReciters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                         </button> */}
 
-                        {/* {showReciters && (
+                      {/* {showReciters && (
                           <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-night-400 card-bg border border-green-100 dark:border-night-300 rounded-md shadow-lg z-10">
                             <div className="p-2">
                               <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -502,11 +502,10 @@ export default function QuranSection() {
                               setSelectedReciter(reciter)
                               setShowReciters(false)
                             }}
-                            className={`w-full text-left px-3 py-2 rounded-md text-sm dropdown-item ${
-                              selectedReciter.id === reciter.id
+                            className={`w-full text-left px-3 py-2 rounded-md text-sm dropdown-item ${selectedReciter.id === reciter.id
                                 ? "bg-green-100 dark:bg-night-200 text-green-800 dark:text-sand-200 dropdown-item active"
                                 : "hover:bg-green-50 dark:hover:bg-night-300 text-green-700 dark:text-sand-300"
-                            } transition-colors`}
+                              } transition-colors`}
                           >
                             {reciter.name}
                             {reciter.style && <span className="text-xs ml-1 opacity-70">({reciter.style})</span>}
@@ -532,11 +531,10 @@ export default function QuranSection() {
                   <button
                     onClick={startPlayingFullSurah}
                     disabled={isPlayingFullSurah}
-                    className={`px-3 py-1 text-sm rounded-md btn-primary ${
-                      isPlayingFullSurah
+                    className={`px-3 py-1 text-sm rounded-md btn-primary ${isPlayingFullSurah
                         ? "bg-green-200 dark:bg-sand-800/40 text-green-700 dark:text-sand-400 cursor-not-allowed"
                         : "bg-green-600 hover:bg-green-700 dark:bg-sand-700 dark:hover:bg-sand-600 text-white dark:text-sand-100"
-                    } transition-colors flex items-center gap-1 audio-play-btn`}
+                      } transition-colors flex items-center gap-1 audio-play-btn`}
                   >
                     <Play className="h-3 w-3" />
                     {isPlayingFullSurah ? "Playing..." : "Play All Verses"}

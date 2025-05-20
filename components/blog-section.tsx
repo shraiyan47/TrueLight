@@ -55,12 +55,14 @@ export default function BlogSection() {
     <section className="py-8 bg-gray-50 dark:bg-night-800 transition-colors">
       <div className="container mx-auto px-0 max-w-5xl">
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-bold text-green-800 dark:font-bold dark:text-sand-300 section-title transition-colors">
+          {/* <h2 className="text-2xl font-bold text-green-800 dark:font-bold dark:text-sand-300 section-title transition-colors"> */}
+        <h2 className= "text-2xl md:text-3xl font-bold text-center text-green-800 dark:text-sand-300 transition-colors">
+
             Islamic Knowledge
           </h2>
           <Link
             href="/blog"
-            className="font-semibold text-green-600 dark:text-sand-400 hover:text-green-800 dark:hover:text-sand-300 flex items-center gap-1 nav-link transition-colors"
+            className="font-medium text-green-600 dark:text-sand-400 hover:text-green-800 dark:hover:text-sand-300 flex items-center gap-1 nav-link transition-colors"
           >
             View History of Islam
             <ArrowRight className="h-4 w-4" />

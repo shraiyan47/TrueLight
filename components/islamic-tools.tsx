@@ -6,7 +6,9 @@ export default function IslamicTools() {
         <div className="py-8 bg-gray-50 dark:bg-night-800 transition-colors">
             <main className="flex-grow">
                 <div className="container mx-auto px-4 max-w-7xl">
-                    <h1 className="text-2xl font-bold text-center mb-2 text-green-800 dark:font-bold dark:text-sand-300 transition-colors">Islamic Tools</h1>
+                    {/* <h1 className="text-2xl font-bold text-center mb-2 text-green-800 dark:font-bold dark:text-sand-300 transition-colors"> */}
+                    <h1 className="text-2xl md:text-3xl font-bold text-center mb-2 text-green-800 dark:text-sand-300 transition-colors">
+                        Islamic Tools</h1>
                     <p className="text-center text-green-700 dark:text-sand-400 mb-8 max-w-2xl mx-auto">
                         Essential Islamic tools to help you in your daily worship and spiritual practices.
                     </p>

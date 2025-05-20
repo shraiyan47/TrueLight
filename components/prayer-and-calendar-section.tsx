@@ -402,9 +402,10 @@ useEffect(() => {
   return (
     <section className="py-8 bg-white dark:bg-night-800 transition-colors">
       <div className="container mx-auto px-4 max-w-7xl">
-        <h2 className="text-2xl font-bold text-center mb-8 text-green-800 dark:font-bold dark:text-sand-300 transition-colors">
+        <h2 className= "text-2xl md:text-3xl font-bold text-center mb-8 text-green-800 dark:text-sand-300 transition-colors">
           Prayer Times & Hijri Calendar
         </h2>
+
 
         {error && (
           <div className="max-w-5xl mx-auto mb-6 p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/20 rounded-md text-red-700 dark:text-red-400 flex items-start gap-3">
