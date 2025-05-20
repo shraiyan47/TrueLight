@@ -3,7 +3,8 @@
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2, AlertCircle } from "lucide-react"
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2, AlertCircle } from 'lucide-react'
+import { useTheme } from "@/components/theme-provider"
 
 interface QuranAudioPlayerProps {
   surahNumber: number
@@ -12,9 +13,9 @@ interface QuranAudioPlayerProps {
   onComplete?: () => void
   onError?: () => void
   className?: string
+  autoPlay?: boolean
 }
 
-// Map of reciter IDs to their corresponding paths on everyayah.com
 const RECITER_PATHS: Record<string, string> = {
   "ar.alafasy": "Alafasy_128kbps",
   "ar.abdulbasitmurattal": "AbdulSamad_64kbps_QuranExplorer.Com",
@@ -31,6 +32,7 @@ export default function QuranAudioPlayer({
   onComplete,
   onError,
   className = "",
+  autoPlay = false,
 }: QuranAudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -41,6 +43,9 @@ export default function QuranAudioPlayer({
   const [audioSource, setAudioSource] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const progressRef = useRef<HTMLDivElement | null>(null)
+  const hasCalledCompleteRef = useRef(false)
+  const { theme } = useTheme()
+  const isDarkMode = theme === "dark"
 
   // Format time in mm:ss
   const formatTime = (time: number) => {
@@ -58,22 +63,17 @@ export default function QuranAudioPlayer({
 
   // Generate audio URL using everyayah.com API
   const generateAudioUrl = (surah: number, ayah?: number): string => {
-    const reciterPath = RECITER_PATHS[reciter] || RECITER_PATHS["ar.alafasy"] // Fallback to Alafasy if reciter not found
+    const reciterPath = RECITER_PATHS[reciter] || RECITER_PATHS["ar.alafasy"] // fallback
     const paddedSurah = padNumber(surah, 3)
-
     if (ayah) {
-      // For individual ayah - CORRECT FORMAT
       const paddedAyah = padNumber(ayah, 3)
       return `https://everyayah.com/data/${reciterPath}/${paddedSurah}${paddedAyah}.mp3`
     } else {
-      // For complete surah, we'll use a different approach
-      // Since everyayah.com doesn't provide complete surah files, we'll just play the first ayah
-      // In a real app, you would implement a playlist to play all ayahs sequentially
       return `https://everyayah.com/data/${reciterPath}/${paddedSurah}001.mp3`
     }
   }
 
-  // Load audio when surah or reciter changes
+  // Load audio on surah, ayah, or reciter change
   useEffect(() => {
     const loadAudio = async () => {
       try {
@@ -81,8 +81,8 @@ export default function QuranAudioPlayer({
         setError(null)
         setIsPlaying(false)
         setCurrentTime(0)
+        hasCalledCompleteRef.current = false
 
-        // Generate the audio URL
         const url = generateAudioUrl(surahNumber, ayahNumber)
         setAudioSource(url)
 
@@ -91,7 +91,6 @@ export default function QuranAudioPlayer({
           audioRef.current.load()
         }
       } catch (err) {
-        console.error("Error loading audio:", err)
         setError("Failed to load audio. Please try again.")
         setIsLoading(false)
         if (onError) onError()
@@ -101,10 +100,31 @@ export default function QuranAudioPlayer({
     loadAudio()
   }, [surahNumber, ayahNumber, reciter])
 
-  // Set up audio event listeners
+  // Handle autoPlay when audioSource or autoPlay changes
+  useEffect(() => {
+    if (autoPlay && audioRef.current && audioSource) {
+      const playPromise = audioRef.current.play()
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true)
+          })
+          .catch((err) => {
+            setError("Playback failed. Check network or audio availability.")
+            setIsPlaying(false)
+            if (onError) onError()
+          })
+      }
+    } else if (!autoPlay && audioRef.current) {
+      // Pause if autoPlay is false
+      audioRef.current.pause()
+      setIsPlaying(false)
+    }
+  }, [autoPlay, audioSource])
+
+  // Audio event listeners
   useEffect(() => {
     const audio = audioRef.current
-
     if (!audio) return
 
     const handleLoadedMetadata = () => {
@@ -119,7 +139,10 @@ export default function QuranAudioPlayer({
     const handleEnded = () => {
       setIsPlaying(false)
       setCurrentTime(0)
-      if (onComplete) onComplete()
+      if (!hasCalledCompleteRef.current && onComplete) {
+        hasCalledCompleteRef.current = true
+        onComplete()
+      }
     }
 
     const handleCanPlayThrough = () => {
@@ -139,7 +162,7 @@ export default function QuranAudioPlayer({
     }
   }, [onComplete])
 
-  // Handle play/pause
+  // Play/Pause toggle
   const togglePlay = () => {
     if (isLoading || !audioRef.current) return
 
@@ -148,19 +171,11 @@ export default function QuranAudioPlayer({
       setIsPlaying(false)
     } else {
       const playPromise = audioRef.current.play()
-
       if (playPromise !== undefined) {
         playPromise
-          .then(() => {
-            setIsPlaying(true)
-          })
+          .then(() => setIsPlaying(true))
           .catch((err) => {
-            console.error("Error playing audio:", err)
-            setError(
-              `Playback failed. This may be due to network issues or the reciter's audio for ${
-                ayahNumber ? `ayah ${ayahNumber}` : `surah ${surahNumber}`
-              } may be unavailable.`,
-            )
+            setError("Playback failed. Check network or audio availability.")
             setIsPlaying(false)
             if (onError) onError()
           })
@@ -168,45 +183,52 @@ export default function QuranAudioPlayer({
     }
   }
 
-  // Handle mute toggle
+  // Mute toggle
   const toggleMute = () => {
-    if (audioRef.current) {
-      audioRef.current.muted = !isMuted
-      setIsMuted(!isMuted)
-    }
+    if (!audioRef.current) return
+    audioRef.current.muted = !isMuted
+    setIsMuted(!isMuted)
   }
 
-  // Handle seeking
+  // Seek audio position
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!progressRef.current || !audioRef.current) return
-
-    const progressRect = progressRef.current.getBoundingClientRect()
-    const seekPosition = (e.clientX - progressRect.left) / progressRect.width
-    const seekTime = duration * seekPosition
-
+    const rect = progressRef.current.getBoundingClientRect()
+    const clickPos = (e.clientX - rect.left) / rect.width
+    const seekTime = duration * clickPos
     audioRef.current.currentTime = seekTime
     setCurrentTime(seekTime)
   }
 
-  // Handle skip forward/backward
+  // Skip seconds forward/back
   const handleSkip = (seconds: number) => {
     if (!audioRef.current) return
-
-    const newTime = Math.min(Math.max(currentTime + seconds, 0), duration)
+    let newTime = currentTime + seconds
+    if (newTime < 0) newTime = 0
+    if (newTime > duration) newTime = duration
     audioRef.current.currentTime = newTime
     setCurrentTime(newTime)
   }
 
   return (
-    <div className={`rounded-md border border-green-100 dark:border-green-900 p-3 ${className}`}>
+    <div
+      className={`rounded-md border p-3 ${className} ${
+        isDarkMode ? "" : "border-green-100 bg-white"
+      }`}
+      style={
+        isDarkMode
+          ? {
+              backgroundColor: "#121212",
+              borderColor: "#2a2a2a",
+            }
+          : {}
+      }
+    >
       <audio
         ref={audioRef}
         preload="metadata"
         onError={() => {
-          console.error("Audio failed to load:", audioSource)
-          setError(
-            `Unable to load audio for ${ayahNumber ? `ayah ${ayahNumber}` : `surah ${surahNumber}`}. Please try another reciter or check your connection.`,
-          )
+          setError(`Unable to load audio for ${ayahNumber ? `ayah ${ayahNumber}` : `surah ${surahNumber}`}.`)
           setIsLoading(false)
           setIsPlaying(false)
           if (onError) onError()
@@ -224,38 +246,84 @@ export default function QuranAudioPlayer({
         {/* Progress bar */}
         <div
           ref={progressRef}
-          className="h-2 bg-green-100 dark:bg-green-900/50 rounded-full mb-2 cursor-pointer relative overflow-hidden"
+          className={`h-2 rounded-full mb-2 cursor-pointer relative overflow-hidden ${
+            isDarkMode ? "" : "bg-green-100"
+          }`}
           onClick={handleSeek}
+          aria-label="Seek audio progress"
+          role="slider"
+          aria-valuemin={0}
+          aria-valuemax={duration}
+          aria-valuenow={currentTime}
+          style={isDarkMode ? { backgroundColor: "#2a2a2a" } : {}}
         >
           <div
-            className="absolute top-0 left-0 h-full bg-green-600 dark:bg-green-500 rounded-full"
-            style={{ width: `${(currentTime / duration) * 100}%` }}
-          ></div>
+            className={`absolute top-0 left-0 h-full rounded-full transition-all duration-200 ease-linear ${
+              isDarkMode ? "" : "bg-green-600"
+            }`}
+            style={
+              isDarkMode
+                ? {
+                    width: `${(currentTime / duration) * 100}%`,
+                    backgroundColor: "#c4b69d",
+                  }
+                : { width: `${(currentTime / duration) * 100}%` }
+            }
+          />
         </div>
 
         {/* Controls */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
+              aria-label="Skip back 10 seconds"
               onClick={() => handleSkip(-10)}
-              className="p-1 text-green-700 dark:text-green-500 hover:text-green-800 dark:hover:text-green-400 transition-colors"
-              aria-label="Skip backward 10 seconds"
+              className={`p-1 transition-colors ${isDarkMode ? "" : "text-green-700 hover:text-green-800"}`}
+              style={
+                isDarkMode
+                  ? {
+                      color: "#c4b69d",
+                    }
+                  : {}
+              }
+              onMouseOver={(e) => {
+                if (isDarkMode) e.currentTarget.style.color = "#e0d6c2"
+              }}
+              onMouseOut={(e) => {
+                if (isDarkMode) e.currentTarget.style.color = "#c4b69d"
+              }}
             >
               <SkipBack className="h-4 w-4" />
             </button>
 
             <button
+              aria-label={isPlaying ? "Pause audio" : "Play audio"}
               onClick={togglePlay}
               disabled={isLoading}
-              className={`p-2 rounded-full ${
-                isLoading
-                  ? "bg-green-100 dark:bg-green-900/30 text-green-400 dark:text-green-700 cursor-not-allowed"
-                  : "bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white"
-              } transition-colors`}
-              aria-label={isPlaying ? "Pause" : "Play"}
+              className={`p-2 rounded-full transition-colors ${
+                isDarkMode
+                  ? ""
+                  : isLoading
+                  ? "bg-green-100 text-green-400 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700 text-white"
+              }`}
+              style={
+                isDarkMode
+                  ? {
+                      backgroundColor: isLoading ? "#1a1a1a" : "#2a2a2a",
+                      color: isLoading ? "#a39884" : "#e0d6c2",
+                    }
+                  : {}
+              }
+              onMouseOver={(e) => {
+                if (isDarkMode && !isLoading) e.currentTarget.style.backgroundColor = "#3a3a3a"
+              }}
+              onMouseOut={(e) => {
+                if (isDarkMode && !isLoading) e.currentTarget.style.backgroundColor = "#2a2a2a"
+              }}
             >
               {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <Loader2 className="animate-spin h-5 w-5" />
               ) : isPlaying ? (
                 <Pause className="h-5 w-5" />
               ) : (
@@ -264,24 +332,53 @@ export default function QuranAudioPlayer({
             </button>
 
             <button
-              onClick={() => handleSkip(10)}
-              className="p-1 text-green-700 dark:text-green-500 hover:text-green-800 dark:hover:text-green-400 transition-colors"
               aria-label="Skip forward 10 seconds"
+              onClick={() => handleSkip(10)}
+              className={`p-1 transition-colors ${isDarkMode ? "" : "text-green-700 hover:text-green-800"}`}
+              style={
+                isDarkMode
+                  ? {
+                      color: "#c4b69d",
+                    }
+                  : {}
+              }
+              onMouseOver={(e) => {
+                if (isDarkMode) e.currentTarget.style.color = "#e0d6c2"
+              }}
+              onMouseOut={(e) => {
+                if (isDarkMode) e.currentTarget.style.color = "#c4b69d"
+              }}
             >
               <SkipForward className="h-4 w-4" />
             </button>
 
             <button
+              aria-label={isMuted ? "Unmute audio" : "Mute audio"}
               onClick={toggleMute}
-              className="p-1 text-green-700 dark:text-green-500 hover:text-green-800 dark:hover:text-green-400 transition-colors"
-              aria-label={isMuted ? "Unmute" : "Mute"}
+              className={`p-1 transition-colors ${isDarkMode ? "" : "text-green-700 hover:text-green-800"}`}
+              style={
+                isDarkMode
+                  ? {
+                      color: "#c4b69d",
+                    }
+                  : {}
+              }
+              onMouseOver={(e) => {
+                if (isDarkMode) e.currentTarget.style.color = "#e0d6c2"
+              }}
+              onMouseOut={(e) => {
+                if (isDarkMode) e.currentTarget.style.color = "#c4b69d"
+              }}
             >
               {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             </button>
           </div>
 
-          <div className="text-xs text-green-700 dark:text-green-500">
-            {formatTime(currentTime)} / {duration ? formatTime(duration) : "0:00"}
+          <div
+            className={`text-xs tabular-nums select-none ${isDarkMode ? "" : "text-green-700"}`}
+            style={isDarkMode ? { color: "#a39884" } : {}}
+          >
+            {formatTime(currentTime)} / {formatTime(duration)}
           </div>
         </div>
       </div>

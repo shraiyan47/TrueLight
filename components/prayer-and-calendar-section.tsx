@@ -97,47 +97,41 @@ export default function PrayerAndCalendarSection() {
   const [tempCity, setTempCity] = useState("Dhaka")
   const [tempCountry, setTempCountry] = useState("Bangladesh")
 
-  useEffect(() => {
+useEffect(() => {
+  // Ask permission to use geolocation and get the user's City and Country
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude
+        const lon = position.coords.longitude
 
-    // Ask permission to use geolocation and get the user's City and Country
-    // This is a simplified example. In a real app, you would handle errors and permissions properly.
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude
-          const lon = position.coords.longitude
+        fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data && data.city && data.countryName) {
+              setCity(data.city)
+              setCountry(data.countryName)
+            }
+          })
+          .catch((error) => console.error("Error fetching location:", error))
+      },
+      (error) => console.error("Geolocation error:", error)
+    )
+  } else {
+    console.warn("Geolocation is not supported by this browser.")
+  }
 
-          // Fetch city and country based on latitude and longitude
-          fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`)
-            .then((response) => response.json())
-            .then((data) => {
-              if (data && data.city && data.countryName) {
-                setCity(data.city)
-                setCountry(data.countryName)
-              }
-            })
-            .catch((error) => console.error("Error fetching location:", error))
-        },
-        (error) => console.error("Geolocation error:", error),
-      )
-    }
+  // Default fallback
+  if (!city || !country) {
+    setCity("Dhaka")
+    setCountry("Bangladesh")
+  }
 
-    // Fallback to default city and country if geolocation is not supported or fails
-    else {
-      console.warn("Geolocation is not supported by this browser.")
-    }
+  // Removed this call to avoid duplication
+  // fetchPrayerTimes()
 
-    // Set default city and country if not already set
-    if (!city || !country) {
-      setCity("Dhaka")
-      setCountry("Bangladesh")
-    }
+}, [])
 
-    // Fetch prayer times when the component mounts
-    fetchPrayerTimes()
-    
-
-  }, []);
 
   // Format time from 24h to 12h format
   const formatTime = (time: string): string => {
@@ -394,11 +388,11 @@ export default function PrayerAndCalendarSection() {
 
   if (loading && !prayerTimes.length) {
     return (
-      <section className="py-12 bg-white dark:bg-gray-950 transition-colors">
+      <section className="py-12 bg-white dark:bg-night-800 transition-colors">
         <div className="container mx-auto">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 dark:border-green-500 mb-4"></div>
-            <p className="dark:text-gray-300">Loading prayer times...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 dark:border-sand-500 mb-4"></div>
+            <p className="dark:text-sand-300">Loading prayer times...</p>
           </div>
         </div>
       </section>
@@ -406,14 +400,15 @@ export default function PrayerAndCalendarSection() {
   }
 
   return (
-    <section className="py-8 bg-white dark:bg-gray-950 transition-colors">
+    <section className="py-8 bg-white dark:bg-night-800 transition-colors">
       <div className="container mx-auto px-4 max-w-7xl">
-        <h2 className="text-2xl font-bold text-center mb-8 text-green-800 dark:text-green-400 transition-colors">
+        <h2 className= "text-2xl md:text-3xl font-bold text-center mb-8 text-green-800 dark:text-sand-300 transition-colors">
           Prayer Times & Hijri Calendar
         </h2>
 
+
         {error && (
-          <div className="max-w-5xl mx-auto mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 rounded-md text-red-700 dark:text-red-400 flex items-start gap-3">
+          <div className="max-w-5xl mx-auto mb-6 p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/20 rounded-md text-red-700 dark:text-red-400 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
             <div>
               <p className="font-medium">Error loading prayer times</p>
@@ -430,23 +425,23 @@ export default function PrayerAndCalendarSection() {
 
         <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
           {/* Prayer Times Card */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-green-100 dark:border-green-900 overflow-hidden transition-colors">
-            <div className="flex items-center justify-between p-4 border-b border-green-100 dark:border-green-900 bg-green-50 dark:bg-green-950/50 transition-colors">
+          <div className="bg-white dark:bg-night-500 rounded-lg shadow border border-green-100 dark:border-night-300 overflow-hidden transition-colors">
+            <div className="flex items-center justify-between p-4 border-b border-green-100 dark:border-night-300 bg-green-50 dark:bg-night-400 transition-colors">
               <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-green-600 dark:text-green-500" />
-                <h3 className="font-medium text-green-800 dark:text-green-400 transition-colors">Prayer Times</h3>
+                <Clock className="h-5 w-5 text-green-600 dark:text-sand-500" />
+                <h3 className="font-medium text-green-800 dark:text-sand-300 transition-colors">Prayer Times</h3>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowLocationSelector(!showLocationSelector)}
-                  className="text-xs flex items-center gap-1 text-green-700 dark:text-green-500 hover:text-green-800 dark:hover:text-green-400 transition-colors"
+                  className="text-xs flex items-center gap-1 text-green-700 dark:text-sand-400 hover:text-green-800 dark:hover:text-sand-300 transition-colors"
                 >
                   <MapPin className="h-3 w-3" />
                   {city}, {country}
                 </button>
                 <button
                   onClick={fetchPrayerTimes}
-                  className="p-1 rounded-full hover:bg-green-100 dark:hover:bg-green-900/30 text-green-700 dark:text-green-500 transition-colors"
+                  className="p-1 rounded-full hover:bg-green-100 dark:hover:bg-night-300 text-green-700 dark:text-sand-500 transition-colors"
                   aria-label="Refresh prayer times"
                 >
                   <RefreshCw className="h-4 w-4" />
@@ -455,7 +450,7 @@ export default function PrayerAndCalendarSection() {
             </div>
 
             {showLocationSelector && (
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 border-b border-green-100 dark:border-green-900 transition-colors">
+              <div className="p-4 bg-green-50 dark:bg-night-400 border-b border-green-100 dark:border-night-300 transition-colors">
                 <form onSubmit={handleLocationSubmit} className="flex flex-col sm:flex-row gap-2">
                   <div className="flex-1">
                     <label htmlFor="city" className="sr-only">
@@ -467,7 +462,7 @@ export default function PrayerAndCalendarSection() {
                       placeholder="City"
                       value={tempCity}
                       onChange={(e) => setTempCity(e.target.value)}
-                      className="w-full p-2 text-sm border border-green-200 dark:border-green-800 rounded-md bg-white dark:bg-gray-800 text-green-900 dark:text-green-100 focus:outline-none focus:ring-1 focus:ring-green-500 transition-colors"
+                      className="w-full p-2 text-sm border border-green-200 dark:border-night-300 rounded-md bg-white dark:bg-night-400 text-green-900 dark:text-sand-200 focus:outline-none focus:ring-1 focus:ring-green-500 dark:focus:ring-sand-600 transition-colors"
                       required
                     />
                   </div>
@@ -481,13 +476,13 @@ export default function PrayerAndCalendarSection() {
                       placeholder="Country"
                       value={tempCountry}
                       onChange={(e) => setTempCountry(e.target.value)}
-                      className="w-full p-2 text-sm border border-green-200 dark:border-green-800 rounded-md bg-white dark:bg-gray-800 text-green-900 dark:text-green-100 focus:outline-none focus:ring-1 focus:ring-green-500 transition-colors"
+                      className="w-full p-2 text-sm border border-green-200 dark:border-night-300 rounded-md bg-white dark:bg-night-400 text-green-900 dark:text-sand-200 focus:outline-none focus:ring-1 focus:ring-green-500 dark:focus:ring-sand-600 transition-colors"
                       required
                     />
                   </div>
                   <button
                     type="submit"
-                    className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-md transition-colors"
+                    className="px-3 py-2 bg-green-600 hover:bg-green-700 dark:bg-sand-700 dark:hover:bg-sand-600 text-white dark:text-sand-100 text-sm rounded-md transition-colors"
                   >
                     Update
                   </button>
@@ -498,7 +493,7 @@ export default function PrayerAndCalendarSection() {
             <div className="p-4">
               {loading ? (
                 <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 dark:border-green-500"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 dark:border-sand-500"></div>
                 </div>
               ) : (
                 <div className="grid gap-4">
@@ -506,23 +501,23 @@ export default function PrayerAndCalendarSection() {
                     <div
                       key={prayer.name}
                       className={`flex justify-between items-center py-3 ${
-                        prayer.isUpcoming ? "bg-green-50 dark:bg-green-900/20 rounded-md px-3" : ""
+                        prayer.isUpcoming ? "bg-green-50 dark:bg-night-300 rounded-md px-3" : ""
                       } transition-colors`}
                     >
                       <div className="flex flex-col">
-                        <span className="font-medium text-green-800 dark:text-green-400 transition-colors">
+                        <span className="font-medium text-green-800 dark:text-sand-300 transition-colors">
                           {prayer.name}
                         </span>
-                        <span className="text-sm text-green-600 dark:text-green-500 transition-colors">
+                        <span className="text-sm text-green-600 dark:text-sand-400 transition-colors">
                           {prayer.arabicName}
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="text-green-800 dark:text-green-400 font-medium transition-colors">
+                        <span className="text-green-800 dark:text-sand-300 font-medium transition-colors">
                           {prayer.time}
                         </span>
                         {prayer.isUpcoming && (
-                          <div className="text-xs text-green-600 dark:text-green-500 mt-1 transition-colors">
+                          <div className="text-xs text-green-600 dark:text-sand-500 mt-1 transition-colors">
                             Upcoming
                           </div>
                         )}
@@ -535,33 +530,33 @@ export default function PrayerAndCalendarSection() {
           </div>
 
           {/* Hijri Calendar Card */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-green-100 dark:border-green-900 overflow-hidden transition-colors">
-            <div className="flex items-center gap-2 p-4 border-b border-green-100 dark:border-green-900 bg-green-50 dark:bg-green-950/50 transition-colors">
-              <Calendar className="h-5 w-5 text-green-600 dark:text-green-500" />
-              <h3 className="font-medium text-green-800 dark:text-green-400 transition-colors">Hijri Calendar</h3>
+          <div className="bg-white dark:bg-night-500 rounded-lg shadow border border-green-100 dark:border-night-300 overflow-hidden transition-colors">
+            <div className="flex items-center gap-2 p-4 border-b border-green-100 dark:border-night-300 bg-green-50 dark:bg-night-400 transition-colors">
+              <Calendar className="h-5 w-5 text-green-600 dark:text-sand-500" />
+              <h3 className="font-medium text-green-800 dark:text-sand-300 transition-colors">Hijri Calendar</h3>
             </div>
             <div className="p-4">
               {loading ? (
                 <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 dark:border-green-500"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 dark:border-sand-500"></div>
                 </div>
               ) : hijriDate ? (
                 <>
                   <div className="text-center mb-4">
-                    <h4 className="text-lg font-medium text-green-800 dark:text-green-400 transition-colors">
+                    <h4 className="text-lg font-medium text-green-800 dark:text-sand-300 transition-colors">
                       {hijriDate.month} {hijriDate.year}
                     </h4>
-                    <p className="text-green-600 dark:text-green-500 text-sm arabic-text transition-colors">
+                    <p className="text-green-600 dark:text-sand-400 text-sm arabic-text transition-colors">
                       {hijriDate.monthArabic} {hijriDate.year}
                     </p>
-                    <p className="mt-2 text-sm text-green-700 dark:text-green-500 transition-colors">
+                    <p className="mt-2 text-sm text-green-700 dark:text-sand-400 transition-colors">
                       Today: {hijriDate.dayOfWeek}, {hijriDate.day} {hijriDate.month} {hijriDate.year}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-7 text-center text-sm">
                     {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-                      <div key={day} className="font-medium py-2 text-green-700 dark:text-green-500 transition-colors">
+                      <div key={day} className="font-medium py-2 text-green-700 dark:text-sand-500 transition-colors">
                         {day}
                       </div>
                     ))}
@@ -573,8 +568,8 @@ export default function PrayerAndCalendarSection() {
                           day.day === 0
                             ? ""
                             : day.isCurrentDay
-                              ? "bg-green-600 dark:bg-green-700 text-white rounded-full w-8 h-8 flex items-center justify-center mx-auto"
-                              : "text-green-800 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                              ? "bg-green-600 dark:bg-sand-700 text-white dark:text-night-600 rounded-full w-8 h-8 flex items-center justify-center mx-auto"
+                              : "text-green-800 dark:text-sand-300 hover:bg-green-50 dark:hover:bg-night-300"
                         } transition-colors`}
                       >
                         {day.day !== 0 ? day.day : ""}

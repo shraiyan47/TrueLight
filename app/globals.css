@@ -26,25 +26,25 @@
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 142.1 70.6% 45.3%;
-  --primary-foreground: 144.9 80.4% 10%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
+  --background: 240 10% 4%;
+  --foreground: 0 0% 95%;
+  --card: 240 10% 6%;
+  --card-foreground: 0 0% 95%;
+  --popover: 240 10% 6%;
+  --popover-foreground: 0 0% 95%;
+  --primary: 40 30% 60%;
+  --primary-foreground: 0 0% 10%;
+  --secondary: 240 5% 12%;
+  --secondary-foreground: 0 0% 90%;
+  --muted: 240 5% 12%;
+  --muted-foreground: 240 5% 65%;
+  --accent: 40 20% 25%;
+  --accent-foreground: 0 0% 90%;
   --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 142.4 71.8% 29.2%;
+  --destructive-foreground: 0 0% 90%;
+  --border: 240 5% 14%;
+  --input: 240 5% 14%;
+  --ring: 40 30% 50%;
 }
 
 .arabic-text {
@@ -66,3 +66,154 @@
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 300ms;
 }
+
+/* Custom dark mode styles */
+.dark .section-title {
+  @apply text-sand-300 font-medium;
+}
+
+.dark .card-title {
+  @apply text-sand-300 font-medium;
+}
+
+.dark .card-subtitle {
+  @apply text-sand-400;
+}
+
+.dark .card-text {
+  @apply text-sand-200;
+}
+
+.dark .card-muted {
+  @apply text-sand-500;
+}
+
+.dark .card-bg {
+  @apply bg-night-400 border-night-300;
+}
+
+.dark .card-header {
+  @apply bg-night-300 border-night-200;
+}
+
+.dark .nav-link {
+  @apply text-sand-300 hover:text-sand-200;
+}
+
+.dark .nav-link.active {
+  @apply text-sand-200;
+}
+
+.dark .btn-primary {
+  @apply bg-sand-700 hover:bg-sand-600 text-sand-100;
+}
+
+.dark .btn-secondary {
+  @apply bg-night-300 hover:bg-night-200 text-sand-300;
+}
+
+.dark .btn-outline {
+  @apply border-night-200 text-sand-400 hover:bg-night-300;
+}
+
+.dark .icon-primary {
+  @apply text-sand-400;
+}
+
+.dark .icon-secondary {
+  @apply text-sand-500;
+}
+
+.dark .dropdown-item {
+  @apply hover:bg-night-300 text-sand-300;
+}
+
+.dark .dropdown-item.active {
+  @apply bg-night-200 text-sand-200;
+}
+
+.dark .progress-bg {
+  @apply bg-night-300;
+}
+
+.dark .progress-fill {
+  @apply bg-sand-600;
+}
+
+.dark .highlight {
+  @apply bg-night-300 border-l-4 border-sand-700;
+}
+
+.dark .divider {
+  @apply border-night-300;
+}
+
+.dark .input-field {
+  @apply bg-night-300 border-night-200 text-sand-200 focus:border-sand-600 focus:ring-sand-600/20;
+}
+
+.dark .badge {
+  @apply bg-sand-800/40 text-sand-300;
+}
+
+.dark .calendar-day.current-day {
+  @apply bg-sand-700 text-sand-100;
+}
+
+.dark .audio-controls {
+  @apply text-sand-400 hover:text-sand-300;
+}
+
+.dark .audio-play-btn {
+  @apply bg-sand-700 hover:bg-sand-600 text-sand-100;
+}
+
+.dark .audio-time {
+  @apply text-sand-500;
+}
+
+.dark .error-text {
+  @apply text-red-400;
+}
+
+.dark .warning-bg {
+  @apply bg-amber-900/10 border-amber-900/20 text-amber-400;
+}
+
+.dark .success-bg {
+  @apply bg-green-900/10 border-green-900/20 text-green-400;
+}
+
+.dark .info-bg {
+  @apply bg-blue-900/10 border-blue-900/20 text-blue-400;
+}
+
+/* Custom Scrollbar Styles */
+.scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: #c6f6d5 transparent; /* light mode (thumb, track) */
+}
+
+/* WebKit Browsers */
+.scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+  background-color: #c6f6d5; /* Tailwind green-200 */
+  border-radius: 4px;
+}
+
+.scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Dark mode override */
+.dark .scrollable {
+  scrollbar-color: #2f3e46 transparent; /* night-500 equivalent */
+}
+
+.dark .scrollable::-webkit-scrollbar-thumb {
+  background-color: #2f3e46; /* dark thumb color */
+}
+
