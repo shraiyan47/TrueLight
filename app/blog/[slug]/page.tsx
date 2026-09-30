@@ -1,7 +1,7 @@
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import Link from "next/link"
-import { Calendar, User, Tag, ArrowLeft, Share2, Bookmark, Facebook, Twitter } from "lucide-react"
+import { Calendar, User, Tag, ArrowLeft, Share2, Bookmark, Globe, MessageCircle } from "lucide-react"
 
 // This would typically come from a database or CMS
 const blogPost = {
@@ -154,10 +154,10 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
                   <div className="flex items-center gap-3">
                     <span className="text-green-800 dark:text-sand-300 card-title transition-colors">Share:</span>
                     <button className="p-2 rounded-full bg-green-100 dark:bg-night-400 text-green-600 dark:text-sand-400 hover:bg-green-200 dark:hover:bg-night-300 transition-colors">
-                      <Facebook className="h-4 w-4" />
+                      <Globe className="h-4 w-4" />
                     </button>
                     <button className="p-2 rounded-full bg-green-100 dark:bg-night-400 text-green-600 dark:text-sand-400 hover:bg-green-200 dark:hover:bg-night-300 transition-colors">
-                      <Twitter className="h-4 w-4" />
+                      <MessageCircle className="h-4 w-4" />
                     </button>
                     <button className="p-2 rounded-full bg-green-100 dark:bg-night-400 text-green-600 dark:text-sand-400 hover:bg-green-200 dark:hover:bg-night-300 transition-colors">
                       <Share2 className="h-4 w-4" />

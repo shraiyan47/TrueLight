@@ -1,6 +1,24 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-sand-100: #f7f5f3;
+  --color-sand-200: #efe8df;
+  --color-sand-300: #e2d8c8;
+  --color-sand-400: #cbbda5;
+  --color-sand-500: #b79f83;
+  --color-sand-600: #8f6e55;
+  --color-sand-700: #6b4b30;
+  --color-sand-800: #402a19;
+
+  --color-night-100: #0f1720;
+  --color-night-200: #12161b;
+  --color-night-300: #1b2330;
+  --color-night-400: #253041;
+  --color-night-500: #2f3e46;
+  --color-night-600: #33434a;
+  --color-night-700: #0b0f12;
+  --color-night-800: #07090b;
+}
 
 :root {
   --background: 0 0% 100%;

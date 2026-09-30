@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { MapPin, Phone, Mail, Facebook, Twitter, Instagram } from "lucide-react"
+import { MapPin, Phone, Mail, Globe, Share2 } from "lucide-react"
 import Image from "next/image"
 
 export default function Footer() {
@@ -19,23 +19,14 @@ export default function Footer() {
               Guiding you on the path of knowledge and spirituality.
             </p>
             <div className="flex gap-4">
-              <Link
-                href="#"
-                className="text-green-600 dark:text-sand-400 hover:text-green-800 dark:hover:text-sand-300 transition-colors"
-              >
-                <Facebook size={20} />
+              <Link href="#" className="text-green-600 dark:text-sand-400 hover:text-green-800 dark:hover:text-sand-300 transition-colors">
+                <Globe size={20} />
               </Link>
-              <Link
-                href="#"
-                className="text-green-600 dark:text-sand-400 hover:text-green-800 dark:hover:text-sand-300 transition-colors"
-              >
-                <Twitter size={20} />
+              <Link href="#" className="text-green-600 dark:text-sand-400 hover:text-green-800 dark:hover:text-sand-300 transition-colors">
+                <Share2 size={20} />
               </Link>
-              <Link
-                href="#"
-                className="text-green-600 dark:text-sand-400 hover:text-green-800 dark:hover:text-sand-300 transition-colors"
-              >
-                <Instagram size={20} />
+              <Link href="#" className="text-green-600 dark:text-sand-400 hover:text-green-800 dark:hover:text-sand-300 transition-colors">
+                <Mail size={20} />
               </Link>
             </div>
           </div>
